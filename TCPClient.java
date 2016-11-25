@@ -33,6 +33,7 @@ class TCPClient {
     /* public key */
     private static String publicKeyAsString; 
     private static PublicKey publicKey;
+    public static String serverPublicKey;
 
     /* protocol login step switches */
     private static Boolean protocolLoginStep1;
@@ -144,7 +145,6 @@ class TCPClient {
         person.run();
     }
 
-    public static String serverPublicKey;
 
 // this class gets messages from the server
 

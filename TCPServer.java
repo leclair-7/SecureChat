@@ -237,8 +237,7 @@ public class TCPServer {
                             } 
                             else {
                                 // No such key
-                            }
-                           
+                            }                           
                       }
                       else
                       {
