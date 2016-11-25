@@ -32,69 +32,55 @@ import javax.crypto.SealedObject;
 
 class TCPClient {
 
+    /* incoming message handling objects */
     String sentence;
     String modifiedSentence;
     String alias = "Bambino";
+    public  static int messageNumber;
+
+    /* public key */
     private static String publicKeyAsString; 
     private static PublicKey publicKey;
+
+    /* protocol login step switches */
+    private static Boolean protocolLoginStep1;
+    private static Boolean protocolLoginStep2;
+    private static Boolean protocolLoginStep3;
+    private static Boolean protocolLoginStep4;
     
+    /* shared key keys */
     public String key = "Bar12345Bar12345Bar12345Bar12345"; // 256 bit key --> key.length() == 32 bytes
     public String initVector = "RandomInitVector"; // 16 bytes IV
-    
-    public static String hashPS( String password) throws NoSuchAlgorithmException
-  {    
-    MessageDigest md = MessageDigest.getInstance("SHA-256");
-    
-    // I'm not sure what the hell this update thing does
-    md.update(password.getBytes() );
+    public String sessionKey_Kas;
 
-    //this computes the hash
-    byte byteData[] = md.digest();
 
-    StringBuffer sb = new StringBuffer();
-    for (int i = 0; i < byteData.length; i++) {
-     sb.append(Integer.toString((byteData[i] & 0xff) + 0x100, 16).substring(1));
+    public TCPClient() 
+    {
+        protocolLoginStep1 = false;
+        protocolLoginStep2 = false;
+        protocolLoginStep3 = false;
+        protocolLoginStep4 = false;
+        messageNumber = 0;
     }
-    
-    // that v v v v outputs 32 as it should
-    //System.out.println( byteData.length);
-    //System.out.println("Hex format : " + sb.toString());
-    return sb.toString();
-  } 
 
+    public static String hashPS( String password) throws NoSuchAlgorithmException
+    {    
+      MessageDigest md = MessageDigest.getInstance("SHA-256");
+      
+      // I'm not sure what the hell this update thing does
+      md.update(password.getBytes() );
 
- /*
-  *     Hashes a buddy list for client initial authentication
-  *
-  *     Use example:
-  *
-  *     LinkedList <String> aBuddyList = userProfiles.get("Ron").getBuddyList();
-  *     System.out.println(hashBuddyList(aBuddyList)[0] +": "+ hashBuddyList(aBuddyList)[1] );
-  */
-  public static String[] hashBuddyList( LinkedList <String> aBuddyList) throws NoSuchAlgorithmException
-  {    
-       
-        String buddyListAsString = "";
-        int numit =0;
-        for(String o : aBuddyList)
-        {
-            //System.out.println(o);
-            if ( numit == 0) 
-            { 
-                buddyListAsString = o; 
-                numit =14; 
-            } 
-            else 
-            {
-                buddyListAsString = buddyListAsString + "\t" + o;   
-            }
-        }
-    String hashBuddyListNames = hashOfBuddyList.hashPS( buddyListAsString );
-    //System.out.println( buddyListAsString + ": " + hashBuddyListNames );
-    
-    String [] talferd = { buddyListAsString, hashBuddyListNames } ;
-    return talferd;
-  }
+      //this computes the hash
+      byte byteData[] = md.digest();
+
+      StringBuffer sb = new StringBuffer();
+      for (int i = 0; i < byteData.length; i++) {
+       sb.append(Integer.toString((byteData[i] & 0xff) + 0x100, 16).substring(1));
+      }  
+      
+      return sb.toString();
+    } 
+
 
   public static final String ALGORITHM = "RSA";
 
@@ -179,14 +165,15 @@ class TCPClient {
        new Thread( clll ).start(); 
        
         ////  Change to read from a file or something for name, etc. --------------------------------
-        System.out.print("Type in your <username password> here: ");
+        System.out.println("Type in your <username password> here: ");
         String forLogin = "";
         while (t) 
         { 
+                
                 // user puts in alias password here, this is where that's stopping
-                System.out.print("We see this ll");
+                System.out.println("We see this ll");
                 sentence = inFromUser.readLine();
-                System.out.print("This came afterwards");
+                System.out.println("This came afterwards");
                 String [] userAndPS = sentence.split("\\s+");
                 if ( userAndPS.length != 2 ) 
                 { 
@@ -195,10 +182,11 @@ class TCPClient {
                     continue;
                 }
 
+
                 try 
                 {
                     String nonceForSession = nonce(1024);
-                    String sessionKey_Kas = TCPClient.hashPS( nonceForSession ).substring(0,32);
+                    sessionKey_Kas = TCPClient.hashPS( nonceForSession ).substring(0,32);
 
                     forLogin = userAndPS[0] +"\t"+ TCPClient.hashPS(userAndPS[1]) +
                                "\t"+ nonceForSession;
@@ -261,7 +249,7 @@ public  class Client_IO implements Runnable{
     private String a_msg;
 
     //if messageNumber  = 0 then server will send public key ( as defined by the protocol )
-    int messageNumber =0;
+    int messageNumber = 0;
 
     public Client_IO ( Socket so)
     {
@@ -294,11 +282,38 @@ public  class Client_IO implements Runnable{
                     publicKey = keyFact.generatePublic(x509KeySpec);
 
                     System.out.println("We has the public key");
-        
-                //System.out.println("And we happy? good.");
+       
+                 //System.out.println("And we happy? good.");
+                }
+                else if ( messageNumber == 1)
+                {
+                    // this should be the buddy list
+                    a_msg = fromServer.readLine();                    
+                    System.out.println("buddyList and hash: "+ a_msg);
+
+                    // parse a_msg so we know who we can talk to
+                    System.out.println(SharedKey.decrypt(a_msg, sessionKey_Kas , initVector ));
+                    String line = SharedKey.decrypt(a_msg, sessionKey_Kas , initVector );
+                    int pos = line.toLowerCase().indexOf("ACK_X1".toLowerCase());    
+                    //System.out.println( "Found at: " + pos  );
+                    System.out.println( "Buddy List: " + line.substring(0,pos-1).trim() );
+                    System.out.println( "Who would you like to chat with?");
+
+                    //line.substring(0,pos-1).trim()
+                    a_msg = fromServer.readLine();
+
+                    messageNumber += 1; 
+                }
+                else if ( messageNumber == 2)
+                {
+                  System.out.println("got here to messageNumber = 2 ");
+                    a_msg = fromServer.readLine();
                 }
 
-                a_msg = fromServer.readLine();
+                System.out.println("Server 1");
+                //a_msg = fromServer.readLine();
+                System.out.println("Server 2");
+
                 if (a_msg == null) {return;}       			         
                  System.out.println( a_msg );                
 

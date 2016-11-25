@@ -315,12 +315,12 @@ public class TCPServer {
 
                       String theAuthCred = inFromClient.readLine();                      
 
-                      System.out.println("pausing server here: " + theAuthCred);
+                      //System.out.println("pausing server here: " + theAuthCred);
                       String aSKey = message.substring(0, 32);
                       String anIV = message.substring(32, 48); 
 
                       String isItThemString = SharedKey.decrypt( theAuthCred , aSKey, anIV.trim());                     
-                      System.out.println("Is it them line: " + isItThemString);
+                      //System.out.println("Is it them line: " + isItThemString);                      
                       
                       //  in this protocol step, the client should send alias passwordHash nonce
                       //  so we sort of check for that with the first method that comes to mind
@@ -328,29 +328,26 @@ public class TCPServer {
                       String sessionKey_Kas = "";
                       if ( userAndPSAuthTest.length == 3 ) 
                       {
-                            System.out.println( "Yes your idea is ok for now");
-
+                            //System.out.println( "Yes your idea is ok for now");
                             userInfo value = userProfiles.get(userAndPSAuthTest[0]);
                             if (value != null) {
                                 if ( value.getPS().equals( userAndPSAuthTest[1] ) )
                                 {
-                                    System.out.println( "Access Granted");
-                                    
-                                    System.out.println( "Pausing server for implementation of next step");
-                                    String sdlfjka = inFromClient.readLine();
+                                    System.out.println( "Access Granted");                                    
 
-                                    // if they are a valid user we'll has the nonce to get a session key
+                                    // if they are a valid user we'll hash the nonce to get a session key
                                     sessionKey_Kas = TCPServer.hashPS( userAndPSAuthTest[2] ).substring(0,32);
                                     
                                     // send client a buddylist and hash of buddy list
+                                    serverToClient.println( SharedKey.encrypt(hashBuddyList( value.getBuddyList() ), sessionKey_Kas, anIV.trim() ) );
 
-                                    serverToClient.println( hashBuddyList( value.getBuddyList() ) );
+                                    System.out.println( "send client buddy list then pausing server for implementation of next step");
+                                    String sdlfjka = inFromClient.readLine();
                                 }                                
                             } 
                             else {
                                 // No such key
                             }
-
                            //sessionKey_Kas = TCPServer.hashPS( userAndPSAuthTest[2] ).substring(0,32);
                       }
                       else
