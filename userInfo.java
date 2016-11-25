@@ -47,7 +47,7 @@ public class userInfo
         buddyList = new LinkedList<String>( Arrays.asList(buddies)) ;
         
         try{          
-            passwordHash = TCPServer.hashPS( buddyList.get(1) );
+            passwordHash = SecureChatUtils.hashPS( buddyList.get(1) );
         } catch ( NoSuchAlgorithmException e) { 
           e.printStackTrace(); 
         }
@@ -87,7 +87,7 @@ public class userInfo
               }
               else
               {
-              buddies = buddies + ", " + people;
+              buddies = buddies + "\t" + people;
               }
             } 
           }

@@ -1,13 +1,4 @@
-/**
- * Created by Lucas Hagel on 9/21/2015. After he gave up on doing this in Python
- */
 
-/*
-import java.util.HashSet;
-import java.io.*;
-import java.net.*;
-import java.util.ArrayList;
-*/
 import java.io.*;
 import java.net.*;
 import java.util.*;

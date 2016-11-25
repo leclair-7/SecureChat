@@ -4,7 +4,6 @@ import java.net.*;
 import java.util.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -17,18 +16,11 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-
 import java.security.*;
 import java.security.spec.*;
 import javax.crypto.Cipher;
-
-
-import javax.crypto.Cipher;
-
 import java.util.Base64;
-
 import javax.crypto.SealedObject;
-
 
 class TCPClient {
 
@@ -53,7 +45,6 @@ class TCPClient {
     public String initVector = "RandomInitVector"; // 16 bytes IV
     public String sessionKey_Kas;
 
-
     public TCPClient() 
     {
         protocolLoginStep1 = false;
@@ -62,88 +53,6 @@ class TCPClient {
         protocolLoginStep4 = false;
         messageNumber = 0;
     }
-
-    public static String hashPS( String password) throws NoSuchAlgorithmException
-    {    
-      MessageDigest md = MessageDigest.getInstance("SHA-256");
-      
-      // I'm not sure what the hell this update thing does
-      md.update(password.getBytes() );
-
-      //this computes the hash
-      byte byteData[] = md.digest();
-
-      StringBuffer sb = new StringBuffer();
-      for (int i = 0; i < byteData.length; i++) {
-       sb.append(Integer.toString((byteData[i] & 0xff) + 0x100, 16).substring(1));
-      }  
-      
-      return sb.toString();
-    } 
-
-
-  public static final String ALGORITHM = "RSA";
-
-  /**
-   * Encrypt the plain text using public key.
-   * 
-   * @param text
-   *          : original plain text
-   * @param key
-   *          :The public key
-   * @return Encrypted text
-   * @throws java.lang.Exception
-   */
-  public static byte[] encrypt(String text, PublicKey key) {
-    byte[] cipherText = null;
-    try {
-      // get an RSA cipher object and print the provider
-      final Cipher cipher = Cipher.getInstance(ALGORITHM);
-      // encrypt the plain text using the public key
-      cipher.init(Cipher.ENCRYPT_MODE, key);
-      cipherText = cipher.doFinal(text.getBytes());
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    return cipherText;
-  }
-
-  /**
-   * Decrypt text using private key.
-   * 
-   * @param text
-   *          :encrypted text
-   * @param key
-   *          :The private key
-   * @return plain text
-   * @throws java.lang.Exception
-   */
-  public static String decrypt(byte[] text, PrivateKey key) {
-    byte[] dectyptedText = null;
-    try {
-      // get an RSA cipher object and print the provider
-      final Cipher cipher = Cipher.getInstance(ALGORITHM);      
-      cipher.init(Cipher.DECRYPT_MODE, key);
-      dectyptedText = cipher.doFinal(text);
-    } catch (Exception ex) {
-      ex.printStackTrace();
-    }
-    return new String(dectyptedText);
-  }
-
-  static final String AB = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-  static SecureRandom rnd = new SecureRandom();
-
-  public static String nonce( int len )
-  {
-   StringBuilder sb = new StringBuilder( len );
-   for( int i = 0; i < len; i++ ) 
-      sb.append( AB.charAt( rnd.nextInt(AB.length()) ) );
-   return sb.toString();
-  }
-
-
-//Create input stream
     
     public void run() throws IOException {
 
@@ -168,8 +77,7 @@ class TCPClient {
         System.out.println("Type in your <username password> here: ");
         String forLogin = "";
         while (t) 
-        { 
-                
+        {                 
                 // user puts in alias password here, this is where that's stopping
                 System.out.println("We see this ll");
                 sentence = inFromUser.readLine();
@@ -182,19 +90,18 @@ class TCPClient {
                     continue;
                 }
 
-
                 try 
                 {
-                    String nonceForSession = nonce(1024);
-                    sessionKey_Kas = TCPClient.hashPS( nonceForSession ).substring(0,32);
+                    String nonceForSession = SecureChatUtils.nonce(1024);
+                    sessionKey_Kas = SecureChatUtils.hashPS( nonceForSession ).substring(0,32);
 
-                    forLogin = userAndPS[0] +"\t"+ TCPClient.hashPS(userAndPS[1]) +
+                    forLogin = userAndPS[0] +"\t"+ SecureChatUtils.hashPS(userAndPS[1]) +
                                "\t"+ nonceForSession;
+
                     if ( publicKey != null)
                     {
                         forLogin = SharedKey.encrypt( forLogin, key, initVector).toString();
                     }
-
                     
                     /*
                     *     Presumably we use the server's public  key to  
@@ -216,12 +123,8 @@ class TCPClient {
                     // Initiate the Cipher, telling it that it is going to Encrypt, giving it the public key
                     c.init(Cipher.ENCRYPT_MODE, pubKey2 );
 
-                    SealedObject myEncryptedMessage= new SealedObject( sharedKey_and_IV, c);
-    
+                    SealedObject myEncryptedMessage= new SealedObject( sharedKey_and_IV, c);    
                     outputStream.writeObject(myEncryptedMessage);
-
-
-                    //forLogin       
 
                 }catch (Exception exc){}
 
@@ -242,21 +145,21 @@ class TCPClient {
     }
 
     public static String serverPublicKey;
+
 // this class gets messages from the server
+
 public  class Client_IO implements Runnable{
-    //inheriting at the outset if case we want to add anything to it
+
     private Socket fromServerIO;
     private String a_msg;
 
-    //if messageNumber  = 0 then server will send public key ( as defined by the protocol )
+    //if messageNumber  = 0 then we check to see if we received the public key from the server
     int messageNumber = 0;
 
     public Client_IO ( Socket so)
     {
         this.fromServerIO = so;
-    }
-
-    
+    }    
 
     public void run() {
     a_msg ="";

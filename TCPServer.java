@@ -39,112 +39,6 @@ import javax.crypto.SealedObject;
 
 public class TCPServer {
 
-  static final String AB = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-  static SecureRandom rnd = new SecureRandom();
-
-  public static String nonce( int len )
-  {
-   StringBuilder sb = new StringBuilder( len );
-   for( int i = 0; i < len; i++ ) 
-      sb.append( AB.charAt( rnd.nextInt(AB.length()) ) );
-   return sb.toString();
-  }
-
-
-  public static String hashPS( String password) throws NoSuchAlgorithmException
-  {    
-    MessageDigest md = MessageDigest.getInstance("SHA-256");
-    
-    // I'm not sure what the hell this update thing does
-    md.update(password.getBytes());
-
-    //this computes the hash
-    byte byteData[] = md.digest();
-
-    StringBuffer sb = new StringBuffer();
-    for (int i = 0; i < byteData.length; i++) {
-     sb.append(Integer.toString((byteData[i] & 0xff) + 0x100, 16).substring(1));
-    }
-    
-    // that v v v v outputs 32 as it should
-    //System.out.println( byteData.length);
-    //System.out.println("Hex format : " + sb.toString());
-    return sb.toString();
-  }
-
-  public static String hashBuddyList( LinkedList <String> aBuddyList) throws NoSuchAlgorithmException
-  {    
-       
-        String buddyListAsString = "";
-        int numit =0;
-        for(String o : aBuddyList)
-        {
-            //System.out.println(o);
-            if ( numit == 0) 
-            { 
-                buddyListAsString = o; 
-                numit =14; 
-            } 
-            else 
-            {
-                buddyListAsString = buddyListAsString + "\t" + o;   
-            }
-        }
-    String hashBuddyListNames = hashOfBuddyList.hashPS( buddyListAsString );
-    //System.out.println( buddyListAsString + ": " + hashBuddyListNames );
-    
-    //String [] talferd = { buddyListAsString, "ACK", hashBuddyListNames } ;
-    return buddyListAsString + "\t" + "ACK_X1" + "\t" + hashBuddyListNames;
-  }
-
-  /*
-  *   Below are the public key encrypt and decrypt functions
-  *   
-  *
-  */
-
-  public static byte[] encrypt(String text, PublicKey key) {
-    byte[] cipherText = null;
-    try {
-      // get an RSA cipher object and print the provider
-      final Cipher cipher = Cipher.getInstance(ALGORITHM);
-      // encrypt the plain text using the public key
-      cipher.init(Cipher.ENCRYPT_MODE, key);
-      cipherText = cipher.doFinal(text.getBytes());
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    return cipherText;
-  }
-
-  /**
-   * Decrypt text using private key.
-   * 
-   * @param text
-   *          :encrypted text
-   * @param key
-   *          :The private key
-   * @return plain text
-   * @throws java.lang.Exception
-   */
-  public static String decrypt(byte[] text, PrivateKey key) {
-    byte[] dectyptedText = null;
-    try {
-      // get an RSA cipher object and print the provider
-      final Cipher cipher = Cipher.getInstance(ALGORITHM);
-
-      // decrypt the text using the private key
-      cipher.init(Cipher.DECRYPT_MODE, key);
-      dectyptedText = cipher.doFinal(text);
-
-    } catch (Exception ex) {
-      ex.printStackTrace();
-    }
-
-    return new String(dectyptedText);
-  }
-
-    public static final String ALGORITHM = "RSA";
     private static HashMap < String, userInfo > userProfiles;
     private static int NumPeople;
 
@@ -286,11 +180,7 @@ public class TCPServer {
                     String plainText = "";
                     while ( !isAuthenticated )
                     {
-                      /*
-                      *       
-                      *
-                      *
-                      */
+                     
                       SealedObject clientInfo = (SealedObject) inStream.readObject();
 
                       Cipher dec = Cipher.getInstance("RSA");
@@ -336,10 +226,10 @@ public class TCPServer {
                                     System.out.println( "Access Granted");                                    
 
                                     // if they are a valid user we'll hash the nonce to get a session key
-                                    sessionKey_Kas = TCPServer.hashPS( userAndPSAuthTest[2] ).substring(0,32);
+                                    sessionKey_Kas = SecureChatUtils.hashPS( userAndPSAuthTest[2] ).substring(0,32);
                                     
                                     // send client a buddylist and hash of buddy list
-                                    serverToClient.println( SharedKey.encrypt(hashBuddyList( value.getBuddyList() ), sessionKey_Kas, anIV.trim() ) );
+                                    serverToClient.println( SharedKey.encrypt(SecureChatUtils.hashBuddyList( value.getBuddyList() ), sessionKey_Kas, anIV.trim() ) );
 
                                     System.out.println( "send client buddy list then pausing server for implementation of next step");
                                     String sdlfjka = inFromClient.readLine();
@@ -348,7 +238,7 @@ public class TCPServer {
                             else {
                                 // No such key
                             }
-                           //sessionKey_Kas = TCPServer.hashPS( userAndPSAuthTest[2] ).substring(0,32);
+                           
                       }
                       else
                       {
@@ -369,13 +259,13 @@ public class TCPServer {
                       cl_Alias = inFromClient.readLine();
                       
                       cl_Alias = inFromClient.readLine();
-                      cl_Alias = decrypt( cl_Alias.getBytes(), privateKey);
+                      cl_Alias = SecureChatUtils.decrypt( cl_Alias.getBytes(), privateKey);
                       System.out.println("cl_Alias: "+ cl_Alias);
                       
                       // 1 line will be the shared key encrypted by the public key 
                       
                       
-                      plainText = decrypt( cl_Alias.getBytes(), privateKey);
+                      plainText = SecureChatUtils.decrypt( cl_Alias.getBytes(), privateKey);
                       
                       System.out.println("plainText "+ plainText);
                       
