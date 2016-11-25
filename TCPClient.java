@@ -41,8 +41,62 @@ class TCPClient {
     public String key = "Bar12345Bar12345Bar12345Bar12345"; // 256 bit key --> key.length() == 32 bytes
     public String initVector = "RandomInitVector"; // 16 bytes IV
     
+    public static String hashPS( String password) throws NoSuchAlgorithmException
+  {    
+    MessageDigest md = MessageDigest.getInstance("SHA-256");
+    
+    // I'm not sure what the hell this update thing does
+    md.update(password.getBytes() );
 
-public static final String ALGORITHM = "RSA";
+    //this computes the hash
+    byte byteData[] = md.digest();
+
+    StringBuffer sb = new StringBuffer();
+    for (int i = 0; i < byteData.length; i++) {
+     sb.append(Integer.toString((byteData[i] & 0xff) + 0x100, 16).substring(1));
+    }
+    
+    // that v v v v outputs 32 as it should
+    //System.out.println( byteData.length);
+    //System.out.println("Hex format : " + sb.toString());
+    return sb.toString();
+  } 
+
+
+ /*
+  *     Hashes a buddy list for client initial authentication
+  *
+  *     Use example:
+  *
+  *     LinkedList <String> aBuddyList = userProfiles.get("Ron").getBuddyList();
+  *     System.out.println(hashBuddyList(aBuddyList)[0] +": "+ hashBuddyList(aBuddyList)[1] );
+  */
+  public static String[] hashBuddyList( LinkedList <String> aBuddyList) throws NoSuchAlgorithmException
+  {    
+       
+        String buddyListAsString = "";
+        int numit =0;
+        for(String o : aBuddyList)
+        {
+            //System.out.println(o);
+            if ( numit == 0) 
+            { 
+                buddyListAsString = o; 
+                numit =14; 
+            } 
+            else 
+            {
+                buddyListAsString = buddyListAsString + "\t" + o;   
+            }
+        }
+    String hashBuddyListNames = hashOfBuddyList.hashPS( buddyListAsString );
+    //System.out.println( buddyListAsString + ": " + hashBuddyListNames );
+    
+    String [] talferd = { buddyListAsString, hashBuddyListNames } ;
+    return talferd;
+  }
+
+  public static final String ALGORITHM = "RSA";
 
   /**
    * Encrypt the plain text using public key.
@@ -90,29 +144,6 @@ public static final String ALGORITHM = "RSA";
     }
     return new String(dectyptedText);
   }
-
-  
-
-    public static String hashPS( String password) throws NoSuchAlgorithmException
-  {    
-    MessageDigest md = MessageDigest.getInstance("SHA-256");
-    
-    // I'm not sure what the hell this update thing does
-    md.update(password.getBytes() );
-
-    //this computes the hash
-    byte byteData[] = md.digest();
-
-    StringBuffer sb = new StringBuffer();
-    for (int i = 0; i < byteData.length; i++) {
-     sb.append(Integer.toString((byteData[i] & 0xff) + 0x100, 16).substring(1));
-    }
-    
-    // that v v v v outputs 32 as it should
-    //System.out.println( byteData.length);
-    //System.out.println("Hex format : " + sb.toString());
-    return sb.toString();
-  } 
 
   static final String AB = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
   static SecureRandom rnd = new SecureRandom();
@@ -166,11 +197,11 @@ public static final String ALGORITHM = "RSA";
 
                 try 
                 {
-                    String nonceForLogin = nonce(5);
-                    String sessionKey_Kas = TCPClient.hashPS( nonceForLogin );
+                    String nonceForSession = nonce(1024);
+                    String sessionKey_Kas = TCPClient.hashPS( nonceForSession ).substring(0,32);
 
                     forLogin = userAndPS[0] +"\t"+ TCPClient.hashPS(userAndPS[1]) +
-                               "\t"+ sessionKey_Kas.substring(0,32);
+                               "\t"+ nonceForSession;
                     if ( publicKey != null)
                     {
                         forLogin = SharedKey.encrypt( forLogin, key, initVector).toString();
@@ -182,7 +213,6 @@ public static final String ALGORITHM = "RSA";
                     *           encrypt send a shared key then initial 
                     *           info to authenticate
                     */
-
                     String sharedKey_and_IV= key + initVector;
 
                     //outToServer.println( encryptInfo );
@@ -264,7 +294,7 @@ public  class Client_IO implements Runnable{
                     publicKey = keyFact.generatePublic(x509KeySpec);
 
                     System.out.println("We has the public key");
-        //System.out.println(SharedKey.decrypt(SharedKey.encrypt(publicKeyAsString, key, initVector), key, initVector ));
+        
                 //System.out.println("And we happy? good.");
                 }
 

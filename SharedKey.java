@@ -157,11 +157,10 @@ public class SharedKey {
             System.out.println(SharedKey.hashPS(key)+"\n\n"+SharedKey.hashPS( key ).length() );
             String logicalKnife = SharedKey.hashPS(nonce(10)).substring(0,32);
             System.out.println(logicalKnife + "\n\n" + logicalKnife.length() );
-
             System.out.println(decrypt(encrypt(message, logicalKnife, initVector), logicalKnife, initVector ));
 
         } catch (Exception excep){} 
     
     }
     
-}
+} 

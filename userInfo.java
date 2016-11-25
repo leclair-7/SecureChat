@@ -1,28 +1,10 @@
 
-/**
- * Created by Lucas Hagel on 9/21/2015. After he gave up on doing this in Python
- */
-
-/*
-import java.util.HashSet;
-import java.io.*;
-import java.net.*;
-import java.util.ArrayList;
-*/
 import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-/*
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
 
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.LinkedList;
-*/
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;

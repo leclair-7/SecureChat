@@ -56,7 +56,7 @@ public class TCPServer {
     MessageDigest md = MessageDigest.getInstance("SHA-256");
     
     // I'm not sure what the hell this update thing does
-    md.update(password.getBytes() );
+    md.update(password.getBytes());
 
     //this computes the hash
     byte byteData[] = md.digest();
@@ -71,6 +71,37 @@ public class TCPServer {
     //System.out.println("Hex format : " + sb.toString());
     return sb.toString();
   }
+
+  public static String hashBuddyList( LinkedList <String> aBuddyList) throws NoSuchAlgorithmException
+  {    
+       
+        String buddyListAsString = "";
+        int numit =0;
+        for(String o : aBuddyList)
+        {
+            //System.out.println(o);
+            if ( numit == 0) 
+            { 
+                buddyListAsString = o; 
+                numit =14; 
+            } 
+            else 
+            {
+                buddyListAsString = buddyListAsString + "\t" + o;   
+            }
+        }
+    String hashBuddyListNames = hashOfBuddyList.hashPS( buddyListAsString );
+    //System.out.println( buddyListAsString + ": " + hashBuddyListNames );
+    
+    //String [] talferd = { buddyListAsString, "ACK", hashBuddyListNames } ;
+    return buddyListAsString + "\t" + "ACK_X1" + "\t" + hashBuddyListNames;
+  }
+
+  /*
+  *   Below are the public key encrypt and decrypt functions
+  *   
+  *
+  */
 
   public static byte[] encrypt(String text, PublicKey key) {
     byte[] cipherText = null;
@@ -124,7 +155,13 @@ public class TCPServer {
     private static String sortOfSharedKey;
     private static String sortOfIV;
 
+    private static int newAlicePort;    
+    private static int newBobPort;
+
     public TCPServer (){ 
+
+        newAlicePort = 12005;
+        newBobPort   = 12006;
 
         NumPeople =0;
         userProfiles = new HashMap<>();
@@ -276,18 +313,52 @@ public class TCPServer {
                         continue;
                       }
 
-
-                      String theAuthCred = inFromClient.readLine();
-                      
+                      String theAuthCred = inFromClient.readLine();                      
 
                       System.out.println("pausing server here: " + theAuthCred);
                       String aSKey = message.substring(0, 32);
                       String anIV = message.substring(32, 48); 
 
-                      //SharedKey.decrypt(String encrypted, String key, String initVector)
                       String isItThemString = SharedKey.decrypt( theAuthCred , aSKey, anIV.trim());                     
                       System.out.println("Is it them line: " + isItThemString);
-                      //System.out.println("IV length: " + anIV.length() + " ??? "+ anIV + " !! "+ aSKey);
+                      
+                      //  in this protocol step, the client should send alias passwordHash nonce
+                      //  so we sort of check for that with the first method that comes to mind
+                      String[] userAndPSAuthTest = isItThemString.split("\\s+"); 
+                      String sessionKey_Kas = "";
+                      if ( userAndPSAuthTest.length == 3 ) 
+                      {
+                            System.out.println( "Yes your idea is ok for now");
+
+                            userInfo value = userProfiles.get(userAndPSAuthTest[0]);
+                            if (value != null) {
+                                if ( value.getPS().equals( userAndPSAuthTest[1] ) )
+                                {
+                                    System.out.println( "Access Granted");
+                                    
+                                    System.out.println( "Pausing server for implementation of next step");
+                                    String sdlfjka = inFromClient.readLine();
+
+                                    // if they are a valid user we'll has the nonce to get a session key
+                                    sessionKey_Kas = TCPServer.hashPS( userAndPSAuthTest[2] ).substring(0,32);
+                                    
+                                    // send client a buddylist and hash of buddy list
+
+                                    serverToClient.println( hashBuddyList( value.getBuddyList() ) );
+                                }                                
+                            } 
+                            else {
+                                // No such key
+                            }
+
+                           //sessionKey_Kas = TCPServer.hashPS( userAndPSAuthTest[2] ).substring(0,32);
+                      }
+                      else
+                      {
+                          System.out.println( "unable to authenticate");
+                      }
+                      //private static HashMap < String, userInfo > userProfiles;
+                      
 
                       //String sessionKey
                       System.out.println("pausing server here 1");

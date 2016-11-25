@@ -120,8 +120,7 @@ public static final String ALGORITHM = "RSA";
       System.out.println("Decrypted Text: " + plainText);
   
       byte[] originalPublicKey = Base64.getDecoder().decode(publicKeyAsString);
-      X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(originalPublicKey);
-      
+      X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(originalPublicKey);      
       KeyFactory keyFact = KeyFactory.getInstance("RSA");
       PublicKey pubKey2 = keyFact.generatePublic(x509KeySpec);
 
