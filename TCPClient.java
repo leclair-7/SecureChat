@@ -148,7 +148,7 @@ class TCPClient {
 
 // this class gets messages from the server
 
-public  class Client_IO implements Runnable{
+public  class Client_IO implements Runnable {
 
     private Socket fromServerIO;
     private String a_msg;
@@ -201,10 +201,10 @@ public  class Client_IO implements Runnable{
                     //System.out.println( "Found at: " + pos  );
                     System.out.println( "Buddy List: " + line.substring(0,pos-1).trim() );
                     System.out.println( "Who would you like to chat with?");
-
-                    //line.substring(0,pos-1).trim()
+                    /*
+                        line.substring(0,pos-1).trim()
+                    */                    
                     a_msg = fromServer.readLine();
-
                     messageNumber += 1; 
                 }
                 else if ( messageNumber == 2)

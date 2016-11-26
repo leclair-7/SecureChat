@@ -3,6 +3,10 @@ import java.net.*;
 
 public class EchoClient {
 
+    /*
+        when we put this on TCPClient, we'll replace SharedKey.key with shared key in the constructor
+    */
+
     public EchoClient( int serverPort, int clientPort )
     {
         Runnable theServer = new theServer( serverPort );
@@ -17,10 +21,8 @@ public class EchoClient {
 
     public static void main(String[] args) throws IOException {
         
-        EchoClient e = new EchoClient( 12006, 12005);
-        
-    }
-    
+        EchoClient e = new EchoClient( 12006, 12005);        
+    }  
     
 }
 
@@ -64,9 +66,13 @@ class theClientBob implements Runnable {
             System.out.println("got here");
             while ((userInput = stdIn.readLine()) != null ) 
             {
-
-                out.println(userInput);
-                //System.out.println("recieved msg: " + in.readLine());
+                 /* 
+                    the following sends {message || hash(message) }K_ab 
+                    to the other person
+                */                    
+                userInput = userInput+ "ACK_X1" + SecureChatUtils.hashPS(userInput);   
+                userInput = SharedKey.encrypt( userInput, SharedKey.key, SharedKey.initVector);
+                out.println(SharedKey.encrypt(userInput, SharedKey.key, SharedKey.initVector)); 
             }
 
         } catch (UnknownHostException e) {
@@ -79,7 +85,7 @@ class theClientBob implements Runnable {
                 Thread.sleep(1000);
             }catch (Exception e2){}
             continue;
-        }
+        } catch (Exception exce) {}
 
 
         }//end of while
@@ -107,24 +113,36 @@ class theServerBob implements Runnable {
             int portNumber = Integer.parseInt(args[0]);
             */
             try {
-                ServerSocket serverSocket =
-                    new ServerSocket(port);
+                ServerSocket serverSocket = new ServerSocket(port);
                 Socket clientSocket = serverSocket.accept();
 
                 System.out.println("Connected to LHS");            
 
-                /*
-                PrintWriter out =
-                    new PrintWriter(clientSocket.getOutputStream(), true);     
-                */
                 BufferedReader in = new BufferedReader(
                     new InputStreamReader(clientSocket.getInputStream()));
              
                 String inputLine;
                 while ((inputLine = in.readLine()) != null) {
-                    System.out.println("Recieved msg: " + inputLine);
-                    //Thread.sleep(1000);
-                    //out.println("From RHS --> " + inputLine);
+                    
+                    /* 
+                    the following checks for {message || hash(message) }K_ab 
+                        to the other person
+                    */
+
+                    String semiOriginal = SharedKey.decrypt( inputLine, SharedKey.key, SharedKey.initVector);
+                    int pos = semiOriginal.toLowerCase().indexOf("ACK_X1".toLowerCase()); 
+                    
+                    String msgCheck = semiOriginal.substring(0,pos).trim();
+
+                    if ( SecureChatUtils.hashPS(msgCheck).equals( semiOriginal.substring(pos + 6, semiOriginal.length() ) )) 
+                    {
+                        System.out.println( "Message Received: " + msgCheck);
+                    }
+                    else
+                    {
+                        System.out.println( "Invalid message, may have been tampered with");                
+                    } 
+
                 }
             } catch (IOException e) {
                 System.out.println("Exception caught when trying to listen on port "

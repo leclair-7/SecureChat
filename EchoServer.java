@@ -3,6 +3,9 @@ import java.io.*;
 
 public class EchoServer {
 
+    /*
+        when we put this on TCPClient, we'll replace SharedKey.key with shared key in the constructor
+    */
     public EchoServer( int serverPort, int clientPort )
     {
         Runnable theServer = new theServer( serverPort );
@@ -17,8 +20,7 @@ public class EchoServer {
 
     public static void main(String[] args) throws IOException {
         
-        EchoServer e = new EchoServer( 12005, 12006);
-        
+        EchoServer e = new EchoServer( 12005, 12006);        
     }
 }
 
@@ -43,8 +45,7 @@ class theServer implements Runnable {
             */
 
             try {
-                ServerSocket serverSocket =
-                    new ServerSocket(port);
+                ServerSocket serverSocket = new ServerSocket(port);
                 Socket clientSocket = serverSocket.accept();
 
                System.out.println("Connected to RHS");                
@@ -57,8 +58,24 @@ class theServer implements Runnable {
              
                 String inputLine;
                 while ((inputLine = in.readLine()) != null) {
-                    //Thread.sleep(1000);
-                    System.out.println("Recieved msg: " + inputLine);
+                    /* 
+                    the following checks for {message || hash(message) }K_ab 
+                        to the other person
+                    */
+                    String semiOriginal = SharedKey.decrypt( inputLine, SharedKey.key, SharedKey.initVector);
+                    int pos = semiOriginal.toLowerCase().indexOf("ACK_X1".toLowerCase());
+                    
+                    String msgCheck = semiOriginal.substring(0,pos).trim();
+
+                    if ( SecureChatUtils.hashPS(msgCheck).equals( semiOriginal.substring(pos + 6, semiOriginal.length() ) )) 
+                    {
+                        System.out.println( "Message Received: " + msgCheck);
+                    }
+                    else
+                    {
+                        System.out.println( "Invalid message, may have been tampered with");                
+                    } 
+
                     //out.println("From LHS " + inputLine);
                 }
             } catch (IOException e) {
@@ -113,7 +130,14 @@ class theClient implements Runnable {
                     new InputStreamReader(System.in));
             String userInput;
             while ((userInput = stdIn.readLine()) != null) {
-                out.println(userInput);
+
+                /* 
+                    the following sends {message || hash(message) }K_ab 
+                    to the other person
+                */                    
+                userInput = userInput+ "ACK_X1" + SecureChatUtils.hashPS(userInput);   
+                userInput = SharedKey.encrypt( userInput, SharedKey.key, SharedKey.initVector);
+                out.println( userInput );
                 
             }
         } catch (UnknownHostException e) {
@@ -126,7 +150,7 @@ class theClient implements Runnable {
                 Thread.sleep(1000);
             }catch (Exception e2){}
             continue;
-        }
+        } catch ( Exception asdf) {  }
 
         } // end of client while
     

@@ -65,7 +65,7 @@ public class TCPServer {
           String line;
           while ((line = br.readLine()) != null) {
             String[] line_arr = line.split("\\s+");
-            //System.out.println(line_arr[0] + line_arr.length);
+            
             userProfiles.put( line_arr[0], new userInfo(line_arr) );
           }
         } catch (IOException e) {
@@ -161,7 +161,7 @@ public class TCPServer {
             this.connectionSocket = sock;               
         }
 
-	ObjectInputStream inStream = null; 
+		    ObjectInputStream inStream = null; 
 
         @Override
             public void run() {
@@ -232,11 +232,39 @@ public class TCPServer {
                                     serverToClient.println( SharedKey.encrypt(SecureChatUtils.hashBuddyList( value.getBuddyList() ), sessionKey_Kas, anIV.trim() ) );
 
                                     System.out.println( "send client buddy list then pausing server for implementation of next step");
-                                    String sdlfjka = inFromClient.readLine();
+                                    Boolean validName = false;
+                                    String namePickerThing = inFromClient.readLine();
+
+                                    //this is the name of the client
+                                    cl_Alias = userAndPSAuthTest[0];
+
+                                    prin = new Printw2( userAndPSAuthTest[0], connectionSocket.getOutputStream() );
+                                    prinList.add(prin);
+
+                                    while ( !validName )
+                                    {
+                                         Printw2 temp= null; 
+                                         for(Printw2 wr : prinList )
+                                         {
+                                              if ( !wr.getName().equals(namePickerThing) )
+                                              {
+                                                  // will it let me do nothing here  ??? motherfuckers                                                
+                                              }           
+                                              else
+                                              {
+                                                  validName = true;
+                                                  temp = wr;
+                                                  //send back proxy info here
+                                                  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                                              }
+                                         } // end
+                                    }
                                 }                                
                             } 
                             else {
-                                // No such key
+                                //would this ever happen?
+                                serverToClient.println("The given name dosen't exist, or something else didn't happen");
+                                continue;
                             }                           
                       }
                       else
@@ -282,16 +310,13 @@ public class TCPServer {
                           }
                       }
                     }
-
-
-              }  /* end of try */ catch (IOException ex){
-                   //   System.out.println("this is about to run" );
-               		//ex.printStackTrace();
-	           } catch ( NullPointerException e ) {  }
-               catch ( Exception ex2 ) {  }
-		      finally{
+              }  catch (IOException ex){ } 
+                 catch ( NullPointerException e ) {  }
+                 catch ( Exception ex2 ) {  }
+               /*   take the connection off prinList    */
+		           finally
+               {
                    NumPeople = NumPeople - 1;
-
                    // find person's named printwriter object and then remove from prinList
                    Printw2 temp= null; 
                    for(Printw2 wr : prinList )
@@ -300,32 +325,22 @@ public class TCPServer {
                         {
                             wr.println("ACK " + cl_Alias + ", has exited session, "+ NumPeople+ " are still in the session" );
                            	cls_name.remove(cl_Alias);
-        			    }			      
-    				    else
-    				    {
-    						temp = wr;
-    				    }
-				    }
-
-                try{
-                    temp.close();
-                } catch ( Exception probablyAlreadyDisconnected) {}
-                prinList.remove( temp);
-                           
-			   	String te = "";
-			   	for ( Printw2 person: prinList)
-				{
-					te = te +" " +  person.getName();
-				}
-				for (Printw2 per : prinList)
-				{
-					per.println("Current chatters: " + te);				
-				}
-		}
-
+              			    }			      
+            				    else
+            				    {
+            						temp = wr;
+            				    }
+				           } // end of Printw2 for loop
+                  try
+                  {
+                      temp.close();
+                  } catch ( Exception probablyAlreadyDisconnected) {}
+                  
+                  prinList.remove( temp);
+                 
+		          } // end of the finally
      } // end of run
  }// end of handle client
-
-}
+} // is this the end of the class definition?? who knows..
 
 

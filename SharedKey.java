@@ -43,11 +43,6 @@ import java.security.*;
 import java.security.spec.*;
 import javax.crypto.Cipher;
 
-
-import javax.crypto.Cipher;
-
-import java.util.Base64;
-
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -77,10 +72,7 @@ public class SharedKey {
             cipher.init(Cipher.ENCRYPT_MODE, skeySpec, iv);
 
             byte[] encrypted = cipher.doFinal(value.getBytes());
-            /*
-            System.out.println("encrypted string: "
-                    + Base64.getEncoder().encodeToString(encrypted));
-            */
+            
             return Base64.getEncoder().encodeToString(encrypted);
         } catch (Exception ex) {
             ex.printStackTrace();
