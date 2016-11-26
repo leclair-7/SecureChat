@@ -233,31 +233,60 @@ public class TCPServer {
 
                                     System.out.println( "send client buddy list then pausing server for implementation of next step");
                                     Boolean validName = false;
-                                    String namePickerThing = inFromClient.readLine();
 
                                     //this is the name of the client
                                     cl_Alias = userAndPSAuthTest[0];
 
                                     prin = new Printw2( userAndPSAuthTest[0], connectionSocket.getOutputStream() );
-                                    prinList.add(prin);
+                                    prinList.add(prin);                                 
 
                                     while ( !validName )
                                     {
+                                         System.out.println( "Inside name picker wile");
+
+                                         System.out.println("\n");
+                                         for(Printw2 wr : prinList )
+                                         {
+                                            System.out.println( wr.getName() );
+                                         }
+                                         System.out.println("\n");
+
+                                         String namePickerThing = inFromClient.readLine();
                                          Printw2 temp= null; 
                                          for(Printw2 wr : prinList )
                                          {
                                               if ( !wr.getName().equals(namePickerThing) )
                                               {
-                                                  // will it let me do nothing here  ??? motherfuckers                                                
+                                                  int uselessvar = 9;                                         
                                               }           
                                               else
                                               {
                                                   validName = true;
                                                   temp = wr;
-                                                  //send back proxy info here
+                                                  System.out.println( "We can proxy now!!");
+                                                  String theKAB = SecureChatUtils.nonce(32);
+
+                                                  wr.println("PROXY"+"\t"+theKAB+"\t"+newBobPort+"\t"+newAlicePort);
+                                                                                                    
+                                                  //cl_Alias - chat session requester
+                                                  for(Printw2 wr2 : prinList )
+                                                  {
+                                                    if ( wr2.getName().equals(cl_Alias) )
+                                                    {
+                                                        wr2.println("PROXY"+"\t"+theKAB+"\t"+newAlicePort+"\t"+newBobPort);
+                                                    }
+                                                  }
+
+                                                  System.out.println( "Hopefully this crazy thing worked..");
+                                                  cl_Alias = inFromClient.readLine();
+                                                  //send back proxy info here via wr.println("dfjs");
                                                   //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                                               }
                                          } // end
+                                         //namePickerThing = inFromClient.readLine();
+                                         try{
+                                          Thread.sleep(1000);
+                                         }catch(Exception tralalalala){}
                                     }
                                 }                                
                             } 
@@ -277,38 +306,7 @@ public class TCPServer {
                       //String sessionKey
                       System.out.println("pausing server here 1");
                       cl_Alias = inFromClient.readLine();
-
-                      System.out.println("pausing server here 2");
-                      cl_Alias = inFromClient.readLine();
                       
- 
-                      System.out.println("pausing server here 3");
-                      cl_Alias = inFromClient.readLine();
-                      
-                      cl_Alias = inFromClient.readLine();
-                      cl_Alias = SecureChatUtils.decrypt( cl_Alias.getBytes(), privateKey);
-                      System.out.println("cl_Alias: "+ cl_Alias);
-                      
-                      // 1 line will be the shared key encrypted by the public key 
-                      
-                      
-                      plainText = SecureChatUtils.decrypt( cl_Alias.getBytes(), privateKey);
-                      
-                      System.out.println("plainText "+ plainText);
-                      
-                      String [] userAuth1 = plainText.split("\\s+"); 
-                      if ( userAuth1.length != 3 )
-                      {
-                        System.out.println("Unable to authenticate, try again" );
-                      }
-                      else if ( userProfiles.containsKey(userAuth1) )
-                      {
-                          if ( userAuth1[1].equals(userProfiles.get(userAuth1[0]).getPS() ))
-                          {
-                              isAuthenticated = true;
-                              System.out.println("Authenticated, you are in" );
-                          }
-                      }
                     }
               }  catch (IOException ex){ } 
                  catch ( NullPointerException e ) {  }

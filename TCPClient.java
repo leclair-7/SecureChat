@@ -46,6 +46,11 @@ class TCPClient {
     public String initVector = "RandomInitVector"; // 16 bytes IV
     public String sessionKey_Kas;
 
+    public static int onStep;
+    public String myBuddyListString;
+    public String nameSelectionAttemptChat;
+    public Boolean tcpClientMode;
+
     public TCPClient() 
     {
         protocolLoginStep1 = false;
@@ -53,6 +58,11 @@ class TCPClient {
         protocolLoginStep3 = false;
         protocolLoginStep4 = false;
         messageNumber = 0;
+
+        onStep = 0;
+        myBuddyListString = "";
+        nameSelectionAttemptChat = "";
+        tcpClientMode = false;
     }
     
     public void run() throws IOException {
@@ -81,10 +91,50 @@ class TCPClient {
         {                 
                 // user puts in alias password here, this is where that's stopping
                 System.out.println("We see this ll");
+                
+                if ( onStep == 3)
+                {
+                        String[] namesArray = myBuddyListString.split("\\s+");
+                        List<String> list = Arrays.asList(namesArray); 
+                        Set <String> nameList = new HashSet<String>(list);
+                        
+                        Boolean selected = false;
+                        while( !selected )
+                        {
+                            
+                            /*  This will have to be a client to server negotiation  */                            
+                            if ( tcpClientMode)
+                            {
+                                break;
+                            }
+                            /* in its current setup, you'll have to loop through the entire hashset */
+                            if ( nameList.contains(sentence) )
+                            {
+                                System.out.println("Checking with server to see if this person is available");
+                                nameSelectionAttemptChat = sentence;
+                                outToServer.println( nameSelectionAttemptChat );
+                                
+                                try{
+                                    Thread.sleep(1000);
+                                }catch (Exception exceptr){}                    
+                                //selected = true;                            
+                            } 
+                            else
+                            {
+                                System.out.println("Name not on your buddy list try again:");                                
+                            } 
+                            sentence = inFromUser.readLine();
+                        }
+                }
+                if ( tcpClientMode)
+                {
+                    break;
+                }
+
                 sentence = inFromUser.readLine();
                 System.out.println("This came afterwards");
                 String [] userAndPS = sentence.split("\\s+");
-                if ( userAndPS.length != 2 ) 
+                if ( userAndPS.length != 2 && onStep != 3 ) 
                 { 
                     System.out.print("You are an idiot");
                     System.out.print("Type in your <username password> here: ");
@@ -111,11 +161,6 @@ class TCPClient {
                     */
                     String sharedKey_and_IV= key + initVector;
 
-                    //outToServer.println( encryptInfo );
-                    String aaaa="sunny side up";
-
-                    // start with public key as a string, get back to public key
-
                     byte[] originalPublicKey = Base64.getDecoder().decode(publicKeyAsString);
                     X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(originalPublicKey);      
                     KeyFactory keyFact = KeyFactory.getInstance("RSA");
@@ -134,8 +179,9 @@ class TCPClient {
                 }
                 outToServer.println(forLogin);    
         }// end of while
-
+        try{
         clientSocket.close();
+    } catch (Exception purrt) {}
     } //end of run
 
     ////  Change to read from a file or something for name, etc. --------------------------------
@@ -192,25 +238,32 @@ public  class Client_IO implements Runnable {
                 {
                     // this should be the buddy list
                     a_msg = fromServer.readLine();                    
-                    System.out.println("buddyList and hash: "+ a_msg);
-
-                    // parse a_msg so we know who we can talk to
-                    System.out.println(SharedKey.decrypt(a_msg, sessionKey_Kas , initVector ));
+                    
                     String line = SharedKey.decrypt(a_msg, sessionKey_Kas , initVector );
-                    int pos = line.toLowerCase().indexOf("ACK_X1".toLowerCase());    
-                    //System.out.println( "Found at: " + pos  );
+                    int pos = line.toLowerCase().indexOf("ACK_X1".toLowerCase());                        
+
                     System.out.println( "Buddy List: " + line.substring(0,pos-1).trim() );
-                    System.out.println( "Who would you like to chat with?");
-                    /*
-                        line.substring(0,pos-1).trim()
-                    */                    
-                    a_msg = fromServer.readLine();
+                    onStep = 3;
+                    myBuddyListString = line.substring(0,pos-1).trim();
+                    System.out.println( "Who would you like to chat with?");                   
+
+                    
                     messageNumber += 1; 
                 }
                 else if ( messageNumber == 2)
                 {
-                  System.out.println("got here to messageNumber = 2 ");
+                    System.out.println("got here to messageNumber = 2, awaiting proxy connect info");
                     a_msg = fromServer.readLine();
+                    if ( a_msg.startsWith("PROXY") && a_msg.split("\\s+").length == 4)
+                    {
+                        String [] funPart = a_msg.split("\\s+");
+                        //shared key is funPart[1]
+                        int clientPort = Integer.parseInt(funPart[2]);
+                        int serverPort = Integer.parseInt(funPart[3]);
+
+                        EchoServer e = new EchoServer( serverPort, clientPort, funPart[1] );
+                        tcpClientMode = true;
+                    }
                 }
 
                 System.out.println("Server 1");
@@ -222,10 +275,10 @@ public  class Client_IO implements Runnable {
 
             }
         } catch (IOException ex) {
-            System.err.println(ex);
+            //System.err.println(ex);
         }
         catch (Exception bleh) {
-            System.err.println(bleh);
+            //System.err.println(bleh);
         }
     } // end of clientIO run
 }// end of clientio

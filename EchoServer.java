@@ -6,12 +6,16 @@ public class EchoServer {
     /*
         when we put this on TCPClient, we'll replace SharedKey.key with shared key in the constructor
     */
-    public EchoServer( int serverPort, int clientPort )
+    public String sharedKey_Kab;
+
+    public EchoServer( int serverPort, int clientPort, String sharr )
     {
-        Runnable theServer = new theServer( serverPort );
+        sharedKey_Kab = sharr;
+
+        Runnable theServer = new theServer( serverPort, sharedKey_Kab );
         Thread recieveInfo = new Thread( theServer );
         
-        Runnable theClient = new theClient( "localhost", clientPort );
+        Runnable theClient = new theClient( "localhost", clientPort, sharedKey_Kab );
         Thread sendInfo = new Thread( theClient );
         
         recieveInfo.start();
@@ -20,16 +24,18 @@ public class EchoServer {
 
     public static void main(String[] args) throws IOException {
         
-        EchoServer e = new EchoServer( 12005, 12006);        
+        //EchoServer e = new EchoServer( 12005, 12006);        
     }
 }
 
 class theServer implements Runnable {
 
         private int port;
+        private String sharedKey_Kab;
 
-        public  theServer ( int portNumber)
+        public  theServer ( int portNumber, String sharr)
         {
+            sharedKey_Kab = sharr;
             port = portNumber;
         }
 
@@ -62,7 +68,7 @@ class theServer implements Runnable {
                     the following checks for {message || hash(message) }K_ab 
                         to the other person
                     */
-                    String semiOriginal = SharedKey.decrypt( inputLine, SharedKey.key, SharedKey.initVector);
+                    String semiOriginal = SharedKey.decrypt( inputLine, sharedKey_Kab, SharedKey.initVector);
                     int pos = semiOriginal.toLowerCase().indexOf("ACK_X1".toLowerCase());
                     
                     String msgCheck = semiOriginal.substring(0,pos).trim();
@@ -96,9 +102,11 @@ class theClient implements Runnable {
 
     private String hostName;
     private int portNumber;
+    private String sharedKey_Kab;
 
-    public theClient ( String h, int p)
+    public theClient ( String h, int p, String sshhh)
     {
+        sharedKey_Kab = sshhh;
         hostName = h;
         portNumber = p;
     }
@@ -136,7 +144,7 @@ class theClient implements Runnable {
                     to the other person
                 */                    
                 userInput = userInput+ "ACK_X1" + SecureChatUtils.hashPS(userInput);   
-                userInput = SharedKey.encrypt( userInput, SharedKey.key, SharedKey.initVector);
+                userInput = SharedKey.encrypt( userInput, sharedKey_Kab, SharedKey.initVector);
                 out.println( userInput );
                 
             }
