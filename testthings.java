@@ -26,6 +26,7 @@ public class testthings
 	        Boolean selected = false;
 	        while( !selected )
 	        {
+	        	/*  Awww fuck, this will have to be a client to server negotiation  */
 	        	userInput = stdIn.readLine();
 
 	        	/* in its current setup, you'll have to loop through the entire hashset */
@@ -33,8 +34,8 @@ public class testthings
 	        	{
 	        		System.out.println("The thing works how you wanted it to");
 	        		selected = true;
-	        	}
-	        	
+	        		
+	        	}	        	
 	        }
 
 

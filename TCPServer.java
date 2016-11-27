@@ -188,7 +188,7 @@ public class TCPServer {
                       dec.init( Cipher.DECRYPT_MODE, privateKey );
                       String message = (String) clientInfo.getObject(dec);  
 
-                      System.out.println("The catch = "+ message);
+                      //System.out.println("The catch = "+ message);
 
                       /*
                       String student = (String) inStream.readObject();
@@ -231,7 +231,7 @@ public class TCPServer {
                                     // send client a buddylist and hash of buddy list
                                     serverToClient.println( SharedKey.encrypt(SecureChatUtils.hashBuddyList( value.getBuddyList() ), sessionKey_Kas, anIV.trim() ) );
 
-                                    System.out.println( "send client buddy list then pausing server for implementation of next step");
+                                    //System.out.println( "send client buddy list then pausing server for implementation of next step");
                                     Boolean validName = false;
 
                                     //this is the name of the client
@@ -264,7 +264,7 @@ public class TCPServer {
                                                   validName = true;
                                                   temp = wr;
                                                   System.out.println( "We can proxy now!!");
-                                                  String theKAB = SecureChatUtils.nonce(32);
+                                                  String theKAB = SecureChatUtils.hashPS(SecureChatUtils.nonce(32) ).substring(0,32);
 
                                                   wr.println("PROXY"+"\t"+theKAB+"\t"+newBobPort+"\t"+newAlicePort);
                                                                                                     
@@ -282,14 +282,14 @@ public class TCPServer {
                                                   //send back proxy info here via wr.println("dfjs");
                                                   //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                                               }
-                                         } // end
+                                         } // end of prinList for
                                          //namePickerThing = inFromClient.readLine();
                                          try{
                                           Thread.sleep(1000);
                                          }catch(Exception tralalalala){}
-                                    }
+                                    } // end of while loop
                                 }                                
-                            } 
+                            } // end of if(value != null)
                             else {
                                 //would this ever happen?
                                 serverToClient.println("The given name dosen't exist, or something else didn't happen");

@@ -90,7 +90,7 @@ class TCPClient {
         while (t) 
         {                 
                 // user puts in alias password here, this is where that's stopping
-                System.out.println("We see this ll");
+                //System.out.println("We see this ll");
                 
                 if ( onStep == 3)
                 {
@@ -117,7 +117,12 @@ class TCPClient {
                                 try{
                                     Thread.sleep(1000);
                                 }catch (Exception exceptr){}                    
-                                //selected = true;                            
+                                //selected = true; 
+
+                                if ( tcpClientMode)
+                                {
+                                    break;
+                                }                                                           
                             } 
                             else
                             {
@@ -132,7 +137,7 @@ class TCPClient {
                 }
 
                 sentence = inFromUser.readLine();
-                System.out.println("This came afterwards");
+                //System.out.println("This came afterwards");
                 String [] userAndPS = sentence.split("\\s+");
                 if ( userAndPS.length != 2 && onStep != 3 ) 
                 { 
@@ -214,7 +219,7 @@ public  class Client_IO implements Runnable {
             while (true) {
 
         // this message is long to see if CBC is working among other things
-        String message = "Perhaps you will tire sooner than he will. It is a sad thing to think of, but there is no doubt that genius lasts longer than beauty. That accounts for the fact that we all take such pains to over-educate ourselves. In the wild struggle for existence, we want to have something that endures, and so we fill our minds with rubbish and facts, in the silly hope of keeping our place. The thoroughly well-informed man—that is the modern ideal. And the mind of the thoroughly well-informed man is a dreadful thing. It is like a bric-a-brac shop, all monsters and dust, with everything priced above its proper value. I think you will tire first, all the same. Some day you will look at your friend, and he will seem to you to be a little out of drawing, or you won't like his tone of colour, or something. You will bitterly reproach him in your own heart, and seriously think that he has behaved very badly to you. The next time he calls, you will be perfectly cold and indifferent. It will be a great pity, for it will alter you. What you have told me is quite a romance, a romance of art one might call it, and the worst of having a romance of any kind is that it leaves one so unromantic.";
+        //String message = "Perhaps you will tire sooner than he will. It is a sad thing to think of, but there is no doubt that genius lasts longer than beauty. That accounts for the fact that we all take such pains to over-educate ourselves. In the wild struggle for existence, we want to have something that endures, and so we fill our minds with rubbish and facts, in the silly hope of keeping our place. The thoroughly well-informed man—that is the modern ideal. And the mind of the thoroughly well-informed man is a dreadful thing. It is like a bric-a-brac shop, all monsters and dust, with everything priced above its proper value. I think you will tire first, all the same. Some day you will look at your friend, and he will seem to you to be a little out of drawing, or you won't like his tone of colour, or something. You will bitterly reproach him in your own heart, and seriously think that he has behaved very badly to you. The next time he calls, you will be perfectly cold and indifferent. It will be a great pity, for it will alter you. What you have told me is quite a romance, a romance of art one might call it, and the worst of having a romance of any kind is that it leaves one so unromantic.";
 
         //System.out.println(key.length());
 
@@ -230,7 +235,7 @@ public  class Client_IO implements Runnable {
                     KeyFactory keyFact = KeyFactory.getInstance("RSA");
                     publicKey = keyFact.generatePublic(x509KeySpec);
 
-                    System.out.println("We has the public key");
+                    System.out.println("We have the public key");
        
                  //System.out.println("And we happy? good.");
                 }
@@ -245,14 +250,13 @@ public  class Client_IO implements Runnable {
                     System.out.println( "Buddy List: " + line.substring(0,pos-1).trim() );
                     onStep = 3;
                     myBuddyListString = line.substring(0,pos-1).trim();
-                    System.out.println( "Who would you like to chat with?");                   
-
+                    System.out.println( "Who would you like to chat with?");               
                     
                     messageNumber += 1; 
                 }
                 else if ( messageNumber == 2)
                 {
-                    System.out.println("got here to messageNumber = 2, awaiting proxy connect info");
+                    //System.out.println("got here to messageNumber = 2, awaiting proxy connect info");
                     a_msg = fromServer.readLine();
                     if ( a_msg.startsWith("PROXY") && a_msg.split("\\s+").length == 4)
                     {
@@ -266,12 +270,12 @@ public  class Client_IO implements Runnable {
                     }
                 }
 
-                System.out.println("Server 1");
+                //System.out.println("Server 1");
                 //a_msg = fromServer.readLine();
-                System.out.println("Server 2");
+                //System.out.println("Server 2");
 
                 if (a_msg == null) {return;}       			         
-                 System.out.println( a_msg );                
+                 //System.out.println( a_msg );                
 
             }
         } catch (IOException ex) {
