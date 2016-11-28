@@ -75,6 +75,12 @@ class theServer implements Runnable {
 
                     if ( SecureChatUtils.hashPS(msgCheck).equals( semiOriginal.substring(pos + 6, semiOriginal.length() ) )) 
                     {
+                        //put some ciphertext here
+                        System.out.println( inputLine + "\n");
+
+                        //put some ciphertext here
+                        System.out.println( semiOriginal + "\n");
+
                         System.out.println( "Message Received: " + msgCheck);
                     }
                     else

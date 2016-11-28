@@ -151,7 +151,7 @@ public class TCPServer {
     {
         private Socket connectionSocket;
         private PrintWriter serverToClient;
-        String cl_Alias = "";
+        String userNameOfClient = "";
         String message;
 
         private Printw2 prin;
@@ -169,6 +169,7 @@ public class TCPServer {
                     //create input stream attached to socket
                     BufferedReader inFromClient = new BufferedReader(new InputStreamReader(connectionSocket.getInputStream()));
                     inStream = new ObjectInputStream(connectionSocket.getInputStream());
+                    
                     //takes info from serverside to clientside of the socket 
                     serverToClient =  new PrintWriter(connectionSocket.getOutputStream(), true);
 
@@ -235,10 +236,12 @@ public class TCPServer {
                                     Boolean validName = false;
 
                                     //this is the name of the client
-                                    cl_Alias = userAndPSAuthTest[0];
+                                    userNameOfClient = userAndPSAuthTest[0];
 
                                     prin = new Printw2( userAndPSAuthTest[0], connectionSocket.getOutputStream() );
                                     prinList.add(prin);                                 
+
+                                    Boolean leaveHandleClient = false; 
 
                                     while ( !validName )
                                     {
@@ -268,25 +271,43 @@ public class TCPServer {
 
                                                   wr.println("PROXY"+"\t"+theKAB+"\t"+newBobPort+"\t"+newAlicePort);
                                                                                                     
-                                                  //cl_Alias - chat session requester
+                                                  //userNameOfClient - chat session requester
                                                   for(Printw2 wr2 : prinList )
                                                   {
-                                                    if ( wr2.getName().equals(cl_Alias) )
+                                                    if ( wr2.getName().equals(userNameOfClient) )
                                                     {
                                                         wr2.println("PROXY"+"\t"+theKAB+"\t"+newAlicePort+"\t"+newBobPort);
                                                     }
                                                   }
 
+                                                  newBobPort += 2;
+                                                  newAlicePort += 2;
+
                                                   System.out.println( "Hopefully this crazy thing worked..");
-                                                  cl_Alias = inFromClient.readLine();
+
+
+                                                  
+                                                  leaveHandleClient = true;
                                                   //send back proxy info here via wr.println("dfjs");
                                                   //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                                                  break;
+
+                                                  // maybe put a break here instread of userNameOfClient
+                                                  
+
                                               }
                                          } // end of prinList for
                                          //namePickerThing = inFromClient.readLine();
+
+                                         if (leaveHandleClient  == true)
+                                         {
+                                          break;
+                                         }
+
                                          try{
                                           Thread.sleep(1000);
                                          }catch(Exception tralalalala){}
+
                                     } // end of while loop
                                 }                                
                             } // end of if(value != null)
@@ -305,7 +326,7 @@ public class TCPServer {
 
                       //String sessionKey
                       System.out.println("pausing server here 1");
-                      cl_Alias = inFromClient.readLine();
+                      userNameOfClient = inFromClient.readLine();
                       
                     }
               }  catch (IOException ex){ } 
@@ -314,15 +335,15 @@ public class TCPServer {
                /*   take the connection off prinList    */
 		           finally
                {
-                   NumPeople = NumPeople - 1;
+                   //NumPeople = NumPeople - 1;
                    // find person's named printwriter object and then remove from prinList
                    Printw2 temp= null; 
                    for(Printw2 wr : prinList )
                    {
-                        if ( !wr.getName().equals(cl_Alias) )
+                        if ( !wr.getName().equals(userNameOfClient) )
                         {
-                            wr.println("ACK " + cl_Alias + ", has exited session, "+ NumPeople+ " are still in the session" );
-                           	cls_name.remove(cl_Alias);
+                            //wr.println("ACK " + userNameOfClient + ", has exited session, "+ NumPeople+ " are still in the session" );
+                           	cls_name.remove(userNameOfClient);
               			    }			      
             				    else
             				    {
