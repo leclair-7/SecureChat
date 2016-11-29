@@ -146,27 +146,29 @@ class TCPClient {
                         try 
                         {
                             String nAuth_sessionNonce = SecureChatUtils.nonce(1024);
-                            sessionKey_Kas = SecureChatUtils.hashPS( nAuth_sessionNonce ).substring(0,32);
+
+                            /*Step 1 part 1 of 3 of protocol */                            
                             forLogin = userAndPS[0] +"\t"+ SecureChatUtils.hashPS(userAndPS[1]) +
                                        "\t"+ nAuth_sessionNonce;
+
+                            sessionKey_Kas = SecureChatUtils.hashPS( nAuth_sessionNonce ).substring(0,32).trim();
+                            
                             if ( publicKey != null)
                             {
-                                forLogin = SharedKey.encrypt( forLogin, key, initVector).toString();
+                                forLogin = SharedKey.encrypt( forLogin, sessionKey_Kas, initVector).toString();
                             }
+
+                            /*Step 2 of protocol */   
                             
+
                             /*
                             *     Presumably we use the server's public  key to  
                             *           encrypt send a shared key then initial 
                             *           info to authenticate
                             */
+   
+                            String sharedKey_and_IV= sessionKey_Kas + initVector;
 
-                            /* running the following 3 lines shows that the keys are the same length
-                                    why it gets a padding exception is beyond me
-                            System.out.println(sessionKey_Kas);
-                            System.out.println(key);
-                            System.out.println();
-                            */    
-                            String sharedKey_and_IV= key + initVector;
                             byte[] originalPublicKey = Base64.getDecoder().decode(publicKeyAsString);
                             X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(originalPublicKey);      
                             KeyFactory keyFact = KeyFactory.getInstance("RSA");
@@ -174,10 +176,13 @@ class TCPClient {
                             Cipher c = Cipher.getInstance("RSA");
                             // Initiate the Cipher, telling it that it is going to Encrypt, giving it the public key
                             c.init(Cipher.ENCRYPT_MODE, pubKey2 );
-                            SealedObject myEncryptedMessage= new SealedObject( sharedKey_and_IV, c);    
+                            SealedObject myEncryptedMessage= new SealedObject( sharedKey_and_IV, c);
+
+                            /*Step 1 part 2 of 3 of protocol */     
                             outputStream.writeObject(myEncryptedMessage);
                         }catch (Exception exc){}    
 
+                        /*Step 1 part 3 of 3 of protocol */ 
                         // send the {user, hash(PS), nonce}K_Shared to server
                         outToServer.println(forLogin);
                         String resultOfLoginRequest = fromServer.readLine();
@@ -196,17 +201,7 @@ class TCPClient {
                     }//end of while 
                 } // end of protocolTracker == 1 
 
-            /*
-            System.out.println("We are logged in, lets get a buddy list now, and we are recoved from some odd fails hopefully");
-            String resultOfLoginRequest4 = fromServer.readLine();
-            System.out.println( "Lucas uno: " + resultOfLoginRequest4);
-            resultOfLoginRequest4 = fromServer.readLine();
-            System.out.println(resultOfLoginRequest4);
-            resultOfLoginRequest4 = fromServer.readLine();
-            resultOfLoginRequest4 = fromServer.readLine();
-            */
-
-
+            
                 if ( protocolTracker == 2)
                 {
                     String currentMessageFromServer = fromServer.readLine();                  
@@ -227,7 +222,7 @@ class TCPClient {
                     String serverResult = "";
                     String selectedName = "";
 
-                    System.out.println( "buddy list check: ");
+                    System.out.println( "buddy list: ");
                     for ( String ss : nameList )
                     {
                     System.out.println(ss );
@@ -238,8 +233,14 @@ class TCPClient {
                         /* in its current setup, you'll have to loop through the entire hashset */
                         if ( (selectedName = inFromUser.readLine()) != null && nameList.contains(selectedName) )
                         {
-                            System.out.println("Checking with server to see if " + selectedName + " is available");                            
-                            outToServer.println( selectedName );
+                            System.out.println("Checking with server to see if " + selectedName + " is available"); 
+
+                            try{// this is Alice --> Bob : {bob || hash(bob) } KAS
+                            selectedName = selectedName + "ACK_X1" + SecureChatUtils.hashPS(selectedName);                           
+                            outToServer.println( SharedKey.encrypt( selectedName, sessionKey_Kas, initVector ) );
+                            } catch (Exception asdfasdf){}
+
+
                             if ( ( (serverResult = fromServer.readLine()) != null) && serverResult.startsWith("PROXY") )
                             {
                                 //insert proxy connect code here

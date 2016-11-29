@@ -190,8 +190,9 @@ public class TCPServer {
                       Cipher dec = Cipher.getInstance("RSA");
                       dec.init( Cipher.DECRYPT_MODE, privateKey );
                       String message = (String) clientInfo.getObject(dec);        
-                      
+                      //System.out.println(message);
                       //login {userName, hash(PS), sessionNonce} K_shared
+
                       String theAuthCred = inFromClient.readLine();                   
                       String aSKey = message.substring(0, 32);
                       String anIV = message.substring(32, 48);
@@ -213,8 +214,10 @@ public class TCPServer {
                                     serverToClient.println( "Access Granted");
 
                                     // if they are a valid user we'll hash the nonce to get a session key
+                                    // CREATING SESSION NONCE
                                     sessionKey_Kas = SecureChatUtils.hashPS( userAndPSAuthTest[2] ).substring(0,32);                                    
-                                    // send client a buddylist and hash of buddy list
+                                    
+                                    //{BUDDYLIST | HASH(BUDDYLIST) }Kas
                                     serverToClient.println( SharedKey.encrypt(SecureChatUtils.hashBuddyList( value.getBuddyList() ), sessionKey_Kas, anIV.trim() ) );                                    
 
                                     //this is the name of the current client
@@ -240,7 +243,35 @@ public class TCPServer {
                                         */
                                          // this line is client's buddy list selection
                                          //inFromClient.flush();
+                                         
                                          String namePickerThing = inFromClient.readLine();
+                                         namePickerThing = SharedKey.decrypt( namePickerThing, sessionKey_Kas, anIV.trim() );                                          
+                                         int pos = namePickerThing.toLowerCase().indexOf("ACK_X1".toLowerCase());                        
+
+                                         //System.out.println("Are we here " + namePickerThing);
+
+                                         System.out.println( namePickerThing.substring(0,pos) );
+                                         String namePartOfMessage = namePickerThing.substring(0,pos);
+                                         try{
+                                         if ( SecureChatUtils.hashPS(namePartOfMessage).equals( namePickerThing.substring(pos+6, namePickerThing.length())))
+                                         {
+
+                                          //System.out.println( " checksum works Pause server here ");                    
+                                         }
+                                         else
+                                         {
+                                            System.out.println( "Invalid message on integrity check" );
+                                         }
+                                         }catch (Exception wer){}
+
+                                          /*
+                                          String flimflan = inFromClient.readLine();
+                                          flimflan = inFromClient.readLine();
+                                          flimflan = inFromClient.readLine();
+                                          flimflan = inFromClient.readLine();                                 
+                                          */
+                                         namePickerThing = namePartOfMessage;
+
                                          System.out.println( "Selected: " + namePickerThing);
                                          Printw2 temp= null;
 
@@ -260,6 +291,9 @@ public class TCPServer {
                                                   temp = wr;
                                                   //System.out.println( "We can proxy now!!");
                                                   String theKAB = SecureChatUtils.hashPS(SecureChatUtils.nonce(32) ).substring(0,32);
+
+                                                  // ticket should be generated here
+                                                  // this and 2 more steps of the protocol to go
 
                                                   wr.println("PROXY"+"\t"+theKAB+"\t"+newBobPort+"\t"+newAlicePort);
                                                                                                     

@@ -11,7 +11,7 @@ In another shell login as a client. Type, "java TCPClient" on the shell ( assumi
 space>password that already exists on the system. Type in a username and password.
 
 Step 3:
-login as a different user using Step 2. 
+Login as a different user using Step 2. 
 
 Step 4:
-on the first client, type in a buddy name (case-sensitive), and hit enter. If the buddy whose name the first client, buddy 2, entered is online, then buddy 2 has to type in the name of the first client, then they can chat. 
+On the first client, type in a buddy name (case-sensitive), and hit enter. If the buddy whose name the first client, buddy 2, entered is online, then buddy 2 has to type in the name of the first client, then they can chat. 
