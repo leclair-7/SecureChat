@@ -315,7 +315,9 @@ public class TCPServer {
                                          //namePickerThing = inFromClient.readLine();
                                          if (leaveHandleClient  == true){  break;   }
 
-                                         try{Thread.sleep(500); }catch(Exception tralalalala){}
+                                         if ( !sparker ) {serverToClient.println( namePickerThing + " is not available"); } 
+
+                                         //try{Thread.sleep(500); }catch(Exception tralalalala){}
                                     } // end of while loop
                                 }
                                 else

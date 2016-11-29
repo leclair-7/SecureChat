@@ -1,7 +1,17 @@
 How to use the chat server/client
-by: Lucas Hagel
+by: Lucas Hagel, and Susmitha Manda
 
+usernames and passwords can be found in chatusers.txt
 
-To use this chat application, first log onto cs2.utdallas.edu. Put the files contained in this folder onto your cs2.utdallas.edu account using winscp or something else. Next, in the bash terminal, type "javac *.java" to compile the client and the server. Then, open a new terminal and log in to cs2.utdallas.edu with your netid. Then ssh into net14.utdallas.edu with your netid credentials. cd to the same folder that you put the .java files in. Next start the server by typing, "java TCPServer".
+Step 1:
+To use this chat application, in the bash terminal, type "javac *.java" to compile the client and the server. Then, open 3 new terminals, in one of the terminals start the server by typing, "java TCPServer".
 
-For each client login type, "java TCPClient" on the shell ( assuming it is a bash shell). You will be prompted to select an alias for the chat sesssion. Type "REG <username>" where <username> is the username you want to go by for the duration of the session. Then to send a message to everybody on the chat type 'MESG <message>' where <message> is what you want to broadcast to everybody. To send to a particular user type "PMSG <message>"  where <message> is what you want to broadcast to everybody. To exit type "EXIT" and then hit Enter. 
+Step 2:
+In another shell login as a client. Type, "java TCPClient" on the shell ( assuming it is a bash shell). You will be prompted to type in a username<s
+space>password that already exists on the system. Type in a username and password.
+
+Step 3:
+login as a different user using Step 2. 
+
+Step 4:
+on the first client, type in a buddy name (case-sensitive), and hit enter. If the buddy whose name the first client, buddy 2, entered is online, then buddy 2 has to type in the name of the first client, then they can chat. 
