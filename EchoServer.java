@@ -54,7 +54,7 @@ class theServer implements Runnable {
                 ServerSocket serverSocket = new ServerSocket(port);
                 Socket clientSocket = serverSocket.accept();
 
-               System.out.println("Connected to RHS");                
+               System.out.println("Connection Established");                
                 
 
                 PrintWriter out =

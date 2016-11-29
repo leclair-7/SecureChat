@@ -52,6 +52,8 @@ public class TCPServer {
     private static int newAlicePort;    
     private static int newBobPort;
 
+    public static HashSet<Printw2> prinList = new HashSet<Printw2>();
+    
     public TCPServer (){ 
 
         newAlicePort = 12005;
@@ -83,11 +85,9 @@ public class TCPServer {
             System.out.println( userProfiles.get(name).getPS().length() + " \n\n");
         }
         */
-
         try 
         {
-            // Check if the pair of keys are present else generate those.           
-            
+            // Check if the pair of keys are present else generate those.     
             KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
             kpg.initialize(1024);
             KeyPair myPair = kpg.generateKeyPair();
@@ -110,7 +110,7 @@ public class TCPServer {
         //we have the server sock continuously listen for new incoming connections and then handle them accordingly.
         TCPServer t = new TCPServer();
         ServerSocket welcomeSocket = new ServerSocket(12004);
-	    ///ECB/PKCS1Padding
+      ///ECB/PKCS1Padding
         try 
         {
             while (true)
@@ -125,8 +125,6 @@ public class TCPServer {
         }
     }
 
-    public static HashSet<String> cls_name = new HashSet<String>();
-    public static HashSet<Printw2> prinList = new HashSet<Printw2>();
 
     /*
     * Printw2 is a Printwriter with an outputstream and a name
@@ -174,8 +172,14 @@ public class TCPServer {
                     serverToClient =  new PrintWriter(connectionSocket.getOutputStream(), true);
 
                     serverToClient.println( publicKeyAsString );
-                    //System.out.println(publicKeyAsString);
-                    //decrypt and see if it is a user / ps combination
+                    
+                    /*
+                    System.out.println("does this happen only when a new client logs on?");
+                    String theAuthCred2 = inFromClient.readLine();
+                    theAuthCred2 = inFromClient.readLine();
+                    theAuthCred2 = inFromClient.readLine();
+                    theAuthCred2 = inFromClient.readLine();
+                    */
 
                     Boolean isAuthenticated = false;
                     String plainText = "";
@@ -183,32 +187,14 @@ public class TCPServer {
                     {
                      
                       SealedObject clientInfo = (SealedObject) inStream.readObject();
-
                       Cipher dec = Cipher.getInstance("RSA");
-                      // Initiate the Cipher, telling it that it is going to Decrypt, giving it the private key
                       dec.init( Cipher.DECRYPT_MODE, privateKey );
-                      String message = (String) clientInfo.getObject(dec);  
-
-                      //System.out.println("The catch = "+ message);
-
-                      /*
-                      String student = (String) inStream.readObject();
-                      System.out.println("Object received = " + student);
-                      */
-
-                      // should decrypt to the sortof
-                      //(sss.substring(32, 47));
-                      if ( message.length() != 48)
-                      {
-                        System.out.println("initial message decrypt fail");
-                        continue;
-                      }
-
-                      String theAuthCred = inFromClient.readLine();                      
-
-                      //System.out.println("pausing server here: " + theAuthCred);
+                      String message = (String) clientInfo.getObject(dec);        
+                      
+                      //login {userName, hash(PS), sessionNonce} K_shared
+                      String theAuthCred = inFromClient.readLine();                   
                       String aSKey = message.substring(0, 32);
-                      String anIV = message.substring(32, 48); 
+                      String anIV = message.substring(32, 48);
 
                       String isItThemString = SharedKey.decrypt( theAuthCred , aSKey, anIV.trim());                     
                       //System.out.println("Is it them line: " + isItThemString);                      
@@ -218,55 +204,61 @@ public class TCPServer {
                       String[] userAndPSAuthTest = isItThemString.split("\\s+"); 
                       String sessionKey_Kas = "";
                       if ( userAndPSAuthTest.length == 3 ) 
-                      {
-                            //System.out.println( "Yes your idea is ok for now");
+                      {                            
                             userInfo value = userProfiles.get(userAndPSAuthTest[0]);
+                            //if there is a matching username
                             if (value != null) {
                                 if ( value.getPS().equals( userAndPSAuthTest[1] ) )
                                 {
-                                    System.out.println( "Access Granted");                                    
+                                    serverToClient.println( "Access Granted");
 
                                     // if they are a valid user we'll hash the nonce to get a session key
-                                    sessionKey_Kas = SecureChatUtils.hashPS( userAndPSAuthTest[2] ).substring(0,32);
-                                    
+                                    sessionKey_Kas = SecureChatUtils.hashPS( userAndPSAuthTest[2] ).substring(0,32);                                    
                                     // send client a buddylist and hash of buddy list
-                                    serverToClient.println( SharedKey.encrypt(SecureChatUtils.hashBuddyList( value.getBuddyList() ), sessionKey_Kas, anIV.trim() ) );
+                                    serverToClient.println( SharedKey.encrypt(SecureChatUtils.hashBuddyList( value.getBuddyList() ), sessionKey_Kas, anIV.trim() ) );                                    
 
-                                    //System.out.println( "send client buddy list then pausing server for implementation of next step");
-                                    Boolean validName = false;
-
-                                    //this is the name of the client
+                                    //this is the name of the current client
                                     userNameOfClient = userAndPSAuthTest[0];
-
                                     prin = new Printw2( userAndPSAuthTest[0], connectionSocket.getOutputStream() );
-                                    prinList.add(prin);                                 
+                                    prinList.add(prin);                               
 
                                     Boolean leaveHandleClient = false; 
-
+                                    
+                                    Boolean validName = false;
+                                    
                                     while ( !validName )
                                     {
-                                         System.out.println( "Inside name picker wile");
-
-                                         System.out.println("\n");
+                                         
+                                        /* we can print out available chatters to server, but client's already printubg them out 
+                                         System.out.println("Available chatters: ");
                                          for(Printw2 wr : prinList )
                                          {
                                             System.out.println( wr.getName() );
                                          }
                                          System.out.println("\n");
 
+                                        */
+                                         // this line is client's buddy list selection
+                                         //inFromClient.flush();
                                          String namePickerThing = inFromClient.readLine();
-                                         Printw2 temp= null; 
+                                         System.out.println( "Selected: " + namePickerThing);
+                                         Printw2 temp= null;
+
+                                         Boolean sparker = false;
+
                                          for(Printw2 wr : prinList )
                                          {
                                               if ( !wr.getName().equals(namePickerThing) )
                                               {
                                                   int uselessvar = 9;                                         
                                               }           
-                                              else
+                                              else // this should mean they are connected, ready, and waiting for a chat session
                                               {
+                                                  sparker = true;
+
                                                   validName = true;
                                                   temp = wr;
-                                                  System.out.println( "We can proxy now!!");
+                                                  //System.out.println( "We can proxy now!!");
                                                   String theKAB = SecureChatUtils.hashPS(SecureChatUtils.nonce(32) ).substring(0,32);
 
                                                   wr.println("PROXY"+"\t"+theKAB+"\t"+newBobPort+"\t"+newAlicePort);
@@ -283,50 +275,69 @@ public class TCPServer {
                                                   newBobPort += 2;
                                                   newAlicePort += 2;
 
-                                                  System.out.println( "Hopefully this crazy thing worked..");
+                                                  //System.out.println( "Hopefully this crazy thing worked..");
 
-
-                                                  
-                                                  leaveHandleClient = true;
-                                                  //send back proxy info here via wr.println("dfjs");
-                                                  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                                                   temp  = null;
+                                                   Printw2 temp2 = null; 
+                                                   int polly =0;
+                                                   for(Printw2 wr3 : prinList )
+                                                   {
+                                                        
+                                                        polly += 1;
+                                                        if ( wr3.getName().equals(userNameOfClient) && temp2 == null)
+                                                        {
+                                                            
+                                                            temp = wr3;
+                                                        }           
+                                                        else
+                                                        {
+                                                        temp = wr3;
+                                                        }
+                                                        if ( wr3.getName().equals(namePickerThing) && temp2 == null)
+                                                        {
+                                                          temp2 = wr;
+                                                        }
+                                                        
+                                                   } // end of Printw2 for loop
+                                                  try
+                                                  {
+                                                      temp.close();
+                                                      temp2.close();
+                                                  } catch ( Exception probablyAlreadyDisconnected) {}                                                  
+                                                  prinList.remove( temp);
+                                                  prinList.remove( temp2);                                                  
+                                                  leaveHandleClient = true;                                                  
                                                   break;
+                                              } // end of else whose inside corresponds to a name match
 
-                                                  // maybe put a break here instread of userNameOfClient
-                                                  
-
-                                              }
                                          } // end of prinList for
+                                         //serverToClient.println("Not there, try another person or wait");
                                          //namePickerThing = inFromClient.readLine();
+                                         if (leaveHandleClient  == true){  break;   }
 
-                                         if (leaveHandleClient  == true)
-                                         {
-                                          break;
-                                         }
-
-                                         try{
-                                          Thread.sleep(1000);
-                                         }catch(Exception tralalalala){}
-
+                                         try{Thread.sleep(500); }catch(Exception tralalalala){}
                                     } // end of while loop
+                                }
+                                else
+                                {
+                                    serverToClient.println("The password was incorrect");
                                 }                                
                             } // end of if(value != null)
                             else {
-                                //would this ever happen?
-                                serverToClient.println("The given name dosen't exist, or something else didn't happen");
+                                serverToClient.println("No matching username, try again");
                                 continue;
                             }                           
                       }
-                      else
-                      {
-                          System.out.println( "unable to authenticate");
-                      }
+                      
+                      //System.out.println("Post procying got us here..");
                       //private static HashMap < String, userInfo > userProfiles;
                       
 
                       //String sessionKey
+                      /*
                       System.out.println("pausing server here 1");
                       userNameOfClient = inFromClient.readLine();
+                      */
                       
                     }
               }  catch (IOException ex){ } 
@@ -337,25 +348,7 @@ public class TCPServer {
                {
                    //NumPeople = NumPeople - 1;
                    // find person's named printwriter object and then remove from prinList
-                   Printw2 temp= null; 
-                   for(Printw2 wr : prinList )
-                   {
-                        if ( !wr.getName().equals(userNameOfClient) )
-                        {
-                            //wr.println("ACK " + userNameOfClient + ", has exited session, "+ NumPeople+ " are still in the session" );
-                           	cls_name.remove(userNameOfClient);
-              			    }			      
-            				    else
-            				    {
-            						temp = wr;
-            				    }
-				           } // end of Printw2 for loop
-                  try
-                  {
-                      temp.close();
-                  } catch ( Exception probablyAlreadyDisconnected) {}
-                  
-                  prinList.remove( temp);
+                   
                  
 		          } // end of the finally
      } // end of run

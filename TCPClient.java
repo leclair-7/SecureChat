@@ -28,7 +28,7 @@ class TCPClient {
     String sentence;
     String modifiedSentence;
     String alias = "Bambino";
-    public  static int messageNumber;
+    public static int messageNumber;
 
     /* public key */
     private static String publicKeyAsString; 
@@ -50,6 +50,8 @@ class TCPClient {
     public String myBuddyListString;
     public String nameSelectionAttemptChat;
     public Boolean tcpClientMode;
+
+    
 
     public TCPClient() 
     {
@@ -74,115 +76,214 @@ class TCPClient {
 
        //the true is to autoflush KEEP IT IN!!
        PrintWriter outToServer = new PrintWriter(clientSocket.getOutputStream(), true);
-       ObjectOutputStream outputStream = new ObjectOutputStream(clientSocket.getOutputStream());
-
+       ObjectOutputStream outputStream = new ObjectOutputStream(clientSocket.getOutputStream());    
        
-       Boolean t = true;
-       
-       //starts a new thread to take in information from the server 
-       // just reads FROM the server... until it doesn't
+       /*
        Client_IO clll = new Client_IO(clientSocket);
        new Thread( clll ).start(); 
+       */
+       Boolean haveServerPublicKey = false;
+
+       BufferedReader fromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+        try{    
+            while ( !haveServerPublicKey) 
+            {
+                if ( messageNumber==0 )
+                {
+                    serverPublicKey = fromServer.readLine();
+                    messageNumber += 1;
+                    //System.out.println( serverPublicKey );
+                    publicKeyAsString = serverPublicKey;
+
+                    byte[] originalPublicKey = Base64.getDecoder().decode(publicKeyAsString);
+                    X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(originalPublicKey);      
+                    KeyFactory keyFact = KeyFactory.getInstance("RSA");
+                    publicKey = keyFact.generatePublic(x509KeySpec);
+
+                    haveServerPublicKey = true;
+                    System.out.println("We have the public key");
+                }
+            }
+
+        } catch ( Exception nosuchalgy){}
        
+       /*
+       System.out.println("Pausing client because reasons");
+       String newVar = fromServer.readLine();
+       newVar = fromServer.readLine();
+       newVar = fromServer.readLine();
+       newVar = fromServer.readLine();
+       newVar = fromServer.readLine();
+       */
+
+        int protocolTracker = 1;
+        Boolean areTheyIn = false;
         ////  Change to read from a file or something for name, etc. --------------------------------
-        System.out.println("Type in your <username password> here: ");
+        
         String forLogin = "";
-        while (t) 
+        while (true) 
         {                 
                 // user puts in alias password here, this is where that's stopping
                 //System.out.println("We see this ll");
-                
-                if ( onStep == 3)
+                if ( protocolTracker == 1 )
                 {
-                        String[] namesArray = myBuddyListString.split("\\s+");
-                        List<String> list = Arrays.asList(namesArray); 
-                        Set <String> nameList = new HashSet<String>(list);
-                        
-                        Boolean selected = false;
-                        while( !selected )
-                        {
-                            
-                            /*  This will have to be a client to server negotiation  */                            
-                            if ( tcpClientMode)
-                            {
-                                break;
-                            }
-                            /* in its current setup, you'll have to loop through the entire hashset */
-                            if ( nameList.contains(sentence) )
-                            {
-                                System.out.println("Checking with server to see if this person is available");
-                                nameSelectionAttemptChat = sentence;
-                                outToServer.println( nameSelectionAttemptChat );
-                                
-                                try{
-                                    Thread.sleep(1000);
-                                }catch (Exception exceptr){}                    
-                                //selected = true; 
+                    while ( ! areTheyIn)
+                    {    
 
-                                if ( tcpClientMode)
-                                {
-                                    break;
-                                }                                                           
-                            } 
+                        System.out.println("Type in your <username password> here: ");
+                        sentence = inFromUser.readLine();
+                        //System.out.println("if you don't see this then yes mate");
+
+                        //System.out.println("This came afterwards");
+                        String [] userAndPS = sentence.split("\\s+");
+                        if ( userAndPS.length != 2 && onStep != 3 ) 
+                        {                             
+                            System.out.println("Invalid request format, type the <username password> here: ");
+                            continue;
+                        }
+                        // --------------------  sends object with shared key encrypted with server public key    ----------------------------------
+                        // ------------------------------    THEN it sends login info   ------------------------
+                        try 
+                        {
+                            String nAuth_sessionNonce = SecureChatUtils.nonce(1024);
+                            sessionKey_Kas = SecureChatUtils.hashPS( nAuth_sessionNonce ).substring(0,32);
+                            forLogin = userAndPS[0] +"\t"+ SecureChatUtils.hashPS(userAndPS[1]) +
+                                       "\t"+ nAuth_sessionNonce;
+                            if ( publicKey != null)
+                            {
+                                forLogin = SharedKey.encrypt( forLogin, key, initVector).toString();
+                            }
+                            
+                            /*
+                            *     Presumably we use the server's public  key to  
+                            *           encrypt send a shared key then initial 
+                            *           info to authenticate
+                            */
+
+                            /* running the following 3 lines shows that the keys are the same length
+                                    why it gets a padding exception is beyond me
+                            System.out.println(sessionKey_Kas);
+                            System.out.println(key);
+                            System.out.println();
+                            */    
+                            String sharedKey_and_IV= key + initVector;
+                            byte[] originalPublicKey = Base64.getDecoder().decode(publicKeyAsString);
+                            X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(originalPublicKey);      
+                            KeyFactory keyFact = KeyFactory.getInstance("RSA");
+                            PublicKey pubKey2 = keyFact.generatePublic(x509KeySpec);
+                            Cipher c = Cipher.getInstance("RSA");
+                            // Initiate the Cipher, telling it that it is going to Encrypt, giving it the public key
+                            c.init(Cipher.ENCRYPT_MODE, pubKey2 );
+                            SealedObject myEncryptedMessage= new SealedObject( sharedKey_and_IV, c);    
+                            outputStream.writeObject(myEncryptedMessage);
+                        }catch (Exception exc){}    
+
+                        // send the {user, hash(PS), nonce}K_Shared to server
+                        outToServer.println(forLogin);
+                        String resultOfLoginRequest = fromServer.readLine();
+
+                        if (resultOfLoginRequest.equals("Access Granted")) 
+                        {
+                            protocolTracker = 2;
+                            areTheyIn = true;
+                            break;
+                        }                        
+
+                        System.out.println(resultOfLoginRequest);
+
+                        // --------------------------------------------------------------------   
+                        // -------------------------------------------------------------------- 
+                    }//end of while 
+                } // end of protocolTracker == 1 
+
+            /*
+            System.out.println("We are logged in, lets get a buddy list now, and we are recoved from some odd fails hopefully");
+            String resultOfLoginRequest4 = fromServer.readLine();
+            System.out.println( "Lucas uno: " + resultOfLoginRequest4);
+            resultOfLoginRequest4 = fromServer.readLine();
+            System.out.println(resultOfLoginRequest4);
+            resultOfLoginRequest4 = fromServer.readLine();
+            resultOfLoginRequest4 = fromServer.readLine();
+            */
+
+
+                if ( protocolTracker == 2)
+                {
+                    String currentMessageFromServer = fromServer.readLine();                  
+                    
+                    String line = SharedKey.decrypt(currentMessageFromServer, sessionKey_Kas , initVector );
+                    int pos = line.toLowerCase().indexOf("ACK_X1".toLowerCase());                        
+
+                    System.out.println( "Buddy List: " + line.substring(0,pos-1).trim() );
+                    onStep = 3;
+                    myBuddyListString = line.substring(0,pos-1).trim();
+                    System.out.println( "Who would you like to chat with?"); 
+
+                    String[] namesArray = myBuddyListString.split("\\s+");
+                    List<String> list = Arrays.asList(namesArray); 
+                    Set <String> nameList = new HashSet<String>(list);
+                        
+                    Boolean selected = false;
+                    String serverResult = "";
+                    String selectedName = "";
+
+                    System.out.println( "buddy list check: ");
+                    for ( String ss : nameList )
+                    {
+                    System.out.println(ss );
+                    }
+                    System.out.println( "");
+                    while( !selected )
+                    {                                                                  
+                        /* in its current setup, you'll have to loop through the entire hashset */
+                        if ( (selectedName = inFromUser.readLine()) != null && nameList.contains(selectedName) )
+                        {
+                            System.out.println("Checking with server to see if " + selectedName + " is available");                            
+                            outToServer.println( selectedName );
+                            if ( ( (serverResult = fromServer.readLine()) != null) && serverResult.startsWith("PROXY") )
+                            {
+                                //insert proxy connect code here
+                                /*
+                                System.out.println("Finally got the right buddy thing, pausing client here");
+                                System.out.println( "Lucas uno: " + serverResult);
+                                String resultOfLoginRequest4 = fromServer.readLine();
+                                resultOfLoginRequest4 = fromServer.readLine();
+                                System.out.println(resultOfLoginRequest4);
+                                resultOfLoginRequest4 = fromServer.readLine();
+                                resultOfLoginRequest4 = fromServer.readLine();
+                                */
+                                    System.out.println("Server: yes, " + selectedName +" is available, waiting for him/her to select you");
+                                    String [] funPart = serverResult.split("\\s+");
+                                    //shared key is funPart[1]
+                                    int clientPort = Integer.parseInt(funPart[2]);
+                                    int serverPort = Integer.parseInt(funPart[3]);
+                                    EchoServer e = new EchoServer( serverPort, clientPort, funPart[1] );
+                                    tcpClientMode = true;  
+                                    break;                         
+
+                            }
                             else
                             {
-                                System.out.println("Name not on your buddy list try again:");                                
-                            } 
-                            sentence = inFromUser.readLine();
-                        }
+                                System.out.println("The selected person is not available, try another person or wait");
+                            }
+                                                                                   
+                        } 
+                        else
+                        {
+                            System.out.println("Name not on your buddy list try again:");                                
+                        } 
+                        //sentence = inFromUser.readLine();
+                    }
                 }
                 if ( tcpClientMode)
                 {
                     break;
                 }
 
-                sentence = inFromUser.readLine();
-                //System.out.println("This came afterwards");
-                String [] userAndPS = sentence.split("\\s+");
-                if ( userAndPS.length != 2 && onStep != 3 ) 
-                { 
-                    System.out.print("You are an idiot");
-                    System.out.print("Type in your <username password> here: ");
-                    continue;
-                }
-
-                try 
-                {
-                    String nonceForSession = SecureChatUtils.nonce(1024);
-                    sessionKey_Kas = SecureChatUtils.hashPS( nonceForSession ).substring(0,32);
-
-                    forLogin = userAndPS[0] +"\t"+ SecureChatUtils.hashPS(userAndPS[1]) +
-                               "\t"+ nonceForSession;
-
-                    if ( publicKey != null)
-                    {
-                        forLogin = SharedKey.encrypt( forLogin, key, initVector).toString();
-                    }
-                    
-                    /*
-                    *     Presumably we use the server's public  key to  
-                    *           encrypt send a shared key then initial 
-                    *           info to authenticate
-                    */
-                    String sharedKey_and_IV= key + initVector;
-
-                    byte[] originalPublicKey = Base64.getDecoder().decode(publicKeyAsString);
-                    X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(originalPublicKey);      
-                    KeyFactory keyFact = KeyFactory.getInstance("RSA");
-                    PublicKey pubKey2 = keyFact.generatePublic(x509KeySpec);
-                    Cipher c = Cipher.getInstance("RSA");
-                    // Initiate the Cipher, telling it that it is going to Encrypt, giving it the public key
-                    c.init(Cipher.ENCRYPT_MODE, pubKey2 );
-
-                    SealedObject myEncryptedMessage= new SealedObject( sharedKey_and_IV, c);    
-                    outputStream.writeObject(myEncryptedMessage);
-
-                }catch (Exception exc){}
-
+                
                 if ("exit".equals(sentence)) {
-                    t = false;
+                    break;
                 }
-                outToServer.println(forLogin);    
         }// end of while
         try{
         clientSocket.close();
@@ -202,10 +303,7 @@ class TCPClient {
 public  class Client_IO implements Runnable {
 
     private Socket fromServerIO;
-    private String a_msg;
-
-    //if messageNumber  = 0 then we check to see if we received the public key from the server
-    int messageNumber = 0;
+    private String currentMessageFromServer;    
 
     public Client_IO ( Socket so)
     {
@@ -213,15 +311,10 @@ public  class Client_IO implements Runnable {
     }    
 
     public void run() {
-    a_msg ="";
+    currentMessageFromServer ="";
         try {
             BufferedReader fromServer = new BufferedReader(new InputStreamReader(fromServerIO.getInputStream()));
             while (true) {
-
-        // this message is long to see if CBC is working among other things
-        //String message = "Perhaps you will tire sooner than he will. It is a sad thing to think of, but there is no doubt that genius lasts longer than beauty. That accounts for the fact that we all take such pains to over-educate ourselves. In the wild struggle for existence, we want to have something that endures, and so we fill our minds with rubbish and facts, in the silly hope of keeping our place. The thoroughly well-informed man—that is the modern ideal. And the mind of the thoroughly well-informed man is a dreadful thing. It is like a bric-a-brac shop, all monsters and dust, with everything priced above its proper value. I think you will tire first, all the same. Some day you will look at your friend, and he will seem to you to be a little out of drawing, or you won't like his tone of colour, or something. You will bitterly reproach him in your own heart, and seriously think that he has behaved very badly to you. The next time he calls, you will be perfectly cold and indifferent. It will be a great pity, for it will alter you. What you have told me is quite a romance, a romance of art one might call it, and the worst of having a romance of any kind is that it leaves one so unromantic.";
-
-        //System.out.println(key.length());
 
                 if ( messageNumber==0 )
                 {
@@ -242,9 +335,9 @@ public  class Client_IO implements Runnable {
                 else if ( messageNumber == 1)
                 {
                     // this should be the buddy list
-                    a_msg = fromServer.readLine();                    
+                    currentMessageFromServer = fromServer.readLine();                   
                     
-                    String line = SharedKey.decrypt(a_msg, sessionKey_Kas , initVector );
+                    String line = SharedKey.decrypt(currentMessageFromServer, sessionKey_Kas , initVector );
                     int pos = line.toLowerCase().indexOf("ACK_X1".toLowerCase());                        
 
                     System.out.println( "Buddy List: " + line.substring(0,pos-1).trim() );
@@ -257,10 +350,10 @@ public  class Client_IO implements Runnable {
                 else if ( messageNumber == 2)
                 {
                     //System.out.println("got here to messageNumber = 2, awaiting proxy connect info");
-                    a_msg = fromServer.readLine();
-                    if ( a_msg.startsWith("PROXY") && a_msg.split("\\s+").length == 4)
+                    currentMessageFromServer = fromServer.readLine();
+                    if ( currentMessageFromServer.startsWith("PROXY") && currentMessageFromServer.split("\\s+").length == 4)
                     {
-                        String [] funPart = a_msg.split("\\s+");
+                        String [] funPart = currentMessageFromServer.split("\\s+");
                         //shared key is funPart[1]
                         int clientPort = Integer.parseInt(funPart[2]);
                         int serverPort = Integer.parseInt(funPart[3]);
@@ -268,22 +361,15 @@ public  class Client_IO implements Runnable {
                         EchoServer e = new EchoServer( serverPort, clientPort, funPart[1] );
                         tcpClientMode = true;
                     }
+                    else
+                    {
+
+                    }
                 }
-
-                //System.out.println("Server 1");
-                //a_msg = fromServer.readLine();
-                //System.out.println("Server 2");
-
-                if (a_msg == null) {return;}       			         
-                 //System.out.println( a_msg );                
-
+                if (currentMessageFromServer == null) {return;}			   
             }
-        } catch (IOException ex) {
-            //System.err.println(ex);
-        }
-        catch (Exception bleh) {
-            //System.err.println(bleh);
-        }
+        } catch (IOException ex) {}
+        catch (Exception bleh) {}
     } // end of clientIO run
 }// end of clientio
 
