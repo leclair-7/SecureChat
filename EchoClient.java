@@ -64,12 +64,15 @@ class theClientBob implements Runnable {
          
             String userInput;
             System.out.println("got here");
+            
             while ((userInput = stdIn.readLine()) != null ) 
             {
                  /* 
                     the following sends {message || hash(message) }K_ab 
                     to the other person
-                */                    
+                */                   
+                
+                
                 userInput = userInput+ "ACK_X1" + SecureChatUtils.hashPS(userInput);   
                 userInput = SharedKey.encrypt( userInput, SharedKey.key, SharedKey.initVector);
                 out.println(SharedKey.encrypt(userInput, SharedKey.key, SharedKey.initVector)); 
@@ -116,10 +119,12 @@ class theServerBob implements Runnable {
                 ServerSocket serverSocket = new ServerSocket(port);
                 Socket clientSocket = serverSocket.accept();
 
-                System.out.println("Connected to LHS");            
+                System.out.println("Conected to LHS");    
+                       
 
                 BufferedReader in = new BufferedReader(
                     new InputStreamReader(clientSocket.getInputStream()));
+                    
              
                 String inputLine;
                 while ((inputLine = in.readLine()) != null) {
@@ -133,9 +138,11 @@ class theServerBob implements Runnable {
                     int pos = semiOriginal.toLowerCase().indexOf("ACK_X1".toLowerCase()); 
                     
                     String msgCheck = semiOriginal.substring(0,pos).trim();
+                    
 
                     if ( SecureChatUtils.hashPS(msgCheck).equals( semiOriginal.substring(pos + 6, semiOriginal.length() ) )) 
                     {
+                    
                         System.out.println( "Message Received: " + msgCheck);
                     }
                     else

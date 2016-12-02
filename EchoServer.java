@@ -55,7 +55,7 @@ class theServer implements Runnable {
                 Socket clientSocket = serverSocket.accept();
 
                System.out.println("Connection Established");                
-                
+               System.out.println("Let's Talk"); 
 
                 PrintWriter out =
                     new PrintWriter(clientSocket.getOutputStream(), true);                   

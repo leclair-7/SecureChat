@@ -22,6 +22,7 @@ import javax.crypto.Cipher;
 import java.util.Base64;
 import javax.crypto.SealedObject;
 
+
 class TCPClient {
 
     /* incoming message handling objects */
@@ -101,7 +102,7 @@ class TCPClient {
                     publicKey = keyFact.generatePublic(x509KeySpec);
 
                     haveServerPublicKey = true;
-                    System.out.println("We have the public key");
+                    System.out.println("We have the public key \n");
                 }
             }
 
@@ -235,9 +236,9 @@ class TCPClient {
                         {
                             System.out.println("Checking with server to see if " + selectedName + " is available"); 
 
-                            try{// this is Alice --> Bob : {bob || hash(bob) } KAS
+                            try{// this is Alice --> Server : {bob || hash(bob) } KAS
                             selectedName = selectedName + "ACK_X1" + SecureChatUtils.hashPS(selectedName);                           
-                            outToServer.println( SharedKey.encrypt( selectedName, sessionKey_Kas, initVector ) );
+                            outToServer.println(SharedKey.encrypt( selectedName, sessionKey_Kas, initVector ));
                             } catch (Exception asdfasdf){}
 
 
@@ -254,6 +255,11 @@ class TCPClient {
                                 resultOfLoginRequest4 = fromServer.readLine();
                                 */
                                     System.out.println("Server: yes, " + selectedName +" is available, waiting for him/her to select you");
+                                    
+                                
+                                   
+                                    
+                                
                                     String [] funPart = serverResult.split("\\s+");
                                     //shared key is funPart[1]
                                     int clientPort = Integer.parseInt(funPart[2]);

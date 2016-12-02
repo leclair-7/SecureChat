@@ -37,6 +37,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import javax.crypto.SealedObject;
 
+
 public class TCPServer {
 
     private static HashMap < String, userInfo > userProfiles;
@@ -204,6 +205,12 @@ public class TCPServer {
                       //  so we sort of check for that with the first method that comes to mind
                       String[] userAndPSAuthTest = isItThemString.split("\\s+"); 
                       String sessionKey_Kas = "";
+                      
+                      String tck = " ";
+                      String Ticket = "";
+                      String ticket_encryption=" ";  
+                      String s_to_a=" ";
+                     
                       if ( userAndPSAuthTest.length == 3 ) 
                       {                            
                             userInfo value = userProfiles.get(userAndPSAuthTest[0]);
@@ -215,15 +222,21 @@ public class TCPServer {
 
                                     // if they are a valid user we'll hash the nonce to get a session key
                                     // CREATING SESSION NONCE
-                                    sessionKey_Kas = SecureChatUtils.hashPS( userAndPSAuthTest[2] ).substring(0,32);                                    
+                                    sessionKey_Kas = SecureChatUtils.hashPS( userAndPSAuthTest[2] ).substring(0,32);   
+                                   
                                     
                                     //{BUDDYLIST | HASH(BUDDYLIST) }Kas
-                                    serverToClient.println( SharedKey.encrypt(SecureChatUtils.hashBuddyList( value.getBuddyList() ), sessionKey_Kas, anIV.trim() ) );                                    
+                                    serverToClient.println( SharedKey.encrypt(SecureChatUtils.hashBuddyList( value.getBuddyList() ), sessionKey_Kas, anIV.trim() ) ); 
+                                     
 
+                                    
                                     //this is the name of the current client
                                     userNameOfClient = userAndPSAuthTest[0];
                                     prin = new Printw2( userAndPSAuthTest[0], connectionSocket.getOutputStream() );
-                                    prinList.add(prin);                               
+                                    prinList.add(prin); 
+                                    
+                                    
+                                    
 
                                     Boolean leaveHandleClient = false; 
                                     
@@ -290,10 +303,25 @@ public class TCPServer {
                                                   validName = true;
                                                   temp = wr;
                                                   //System.out.println( "We can proxy now!!");
-                                                  String theKAB = SecureChatUtils.hashPS(SecureChatUtils.nonce(32) ).substring(0,32);
+                                                  
 
                                                   // ticket should be generated here
                                                   // this and 2 more steps of the protocol to go
+                                                  
+                                                  // Producing Ticket: {K_AB | hash( K_AB ) }K_BS
+                                                  String theKAB = SecureChatUtils.hashPS(SecureChatUtils.nonce(32) ).substring(0,32);
+                                                  tck = (theKAB + SecureChatUtils.hashPS(theKAB));
+                                                  Ticket = (SharedKey.encrypt(tck, sessionKey_Kas, anIV.trim()));
+                                   
+                                                  
+                                    
+                                                  // Server to Alice: {K_AB , ticket |hash(K_AB, ticket))K_AS
+                                                  ticket_encryption = theKAB + Ticket;
+                                                  s_to_a = ( theKAB + Ticket + SecureChatUtils.hashPS(ticket_encryption));
+                                                  
+                                                  System.out.println( "\n Server sends ticket and shared key to the client \n" + SharedKey.encrypt( s_to_a, sessionKey_Kas, anIV.trim()) + "\n");
+                                                  
+                                                  System.out.println("\n TICKET IS \n" + Ticket + "\n");
 
                                                   wr.println("PROXY"+"\t"+theKAB+"\t"+newBobPort+"\t"+newAlicePort);
                                                                                                     
@@ -310,6 +338,7 @@ public class TCPServer {
                                                   newAlicePort += 2;
 
                                                   //System.out.println( "Hopefully this crazy thing worked..");
+                                                  
 
                                                    temp  = null;
                                                    Printw2 temp2 = null; 
