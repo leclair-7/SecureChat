@@ -1,8 +1,11 @@
 How to use the chat server/client
 by: Lucas Hagel, and Susmitha Manda
 
+This project was implemented and tested on Ubuntu 16.04 with Java 1.8
+
 usernames and passwords can be found in chatusers.txt
 
+Compile and Running instructions:
 Step 1:
 To use this chat application, in the bash terminal, type "javac *.java" to compile the client and the server. Then, open 3 new terminals, in one of the terminals start the server by typing, "java TCPServer".
 
