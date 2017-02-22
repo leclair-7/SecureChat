@@ -1,36 +1,12 @@
-
 import java.io.*;
 import java.net.*;
 import java.util.*;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
 
 import java.security.*;
 import java.security.spec.*;
 import javax.crypto.Cipher;
 
-
 import javax.crypto.Cipher;
-
-import java.util.Base64;
-
-import java.security.Key;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -126,7 +102,6 @@ public class TCPServer {
         }
     }
 
-
     /*
     * Printw2 is a Printwriter with an outputstream and a name
     *
@@ -172,15 +147,8 @@ public class TCPServer {
                     //takes info from serverside to clientside of the socket 
                     serverToClient =  new PrintWriter(connectionSocket.getOutputStream(), true);
 
-                    serverToClient.println( publicKeyAsString );
+                    serverToClient.println( publicKeyAsString );                   
                     
-                    /*
-                    System.out.println("does this happen only when a new client logs on?");
-                    String theAuthCred2 = inFromClient.readLine();
-                    theAuthCred2 = inFromClient.readLine();
-                    theAuthCred2 = inFromClient.readLine();
-                    theAuthCred2 = inFromClient.readLine();
-                    */
 
                     Boolean isAuthenticated = false;
                     String plainText = "";
@@ -222,41 +190,22 @@ public class TCPServer {
 
                                     // if they are a valid user we'll hash the nonce to get a session key
                                     // CREATING SESSION NONCE
-                                    sessionKey_Kas = SecureChatUtils.hashPS( userAndPSAuthTest[2] ).substring(0,32);   
-                                   
+                                    sessionKey_Kas = SecureChatUtils.hashPS( userAndPSAuthTest[2] ).substring(0,32);                                      
                                     
                                     //{BUDDYLIST | HASH(BUDDYLIST) }Kas
                                     serverToClient.println( SharedKey.encrypt(SecureChatUtils.hashBuddyList( value.getBuddyList() ), sessionKey_Kas, anIV.trim() ) ); 
-                                     
-
-                                    
+                            
                                     //this is the name of the current client
                                     userNameOfClient = userAndPSAuthTest[0];
                                     prin = new Printw2( userAndPSAuthTest[0], connectionSocket.getOutputStream() );
-                                    prinList.add(prin); 
-                                    
-                                    
-                                    
+                                    prinList.add(prin);
 
-                                    Boolean leaveHandleClient = false; 
-                                    
+                                    Boolean leaveHandleClient = false;                                    
                                     Boolean validName = false;
                                     
                                     while ( !validName )
                                     {
-                                         
-                                        /* we can print out available chatters to server, but client's already printubg them out 
-                                         System.out.println("Available chatters: ");
-                                         for(Printw2 wr : prinList )
-                                         {
-                                            System.out.println( wr.getName() );
-                                         }
-                                         System.out.println("\n");
-
-                                        */
-                                         // this line is client's buddy list selection
-                                         //inFromClient.flush();
-                                         
+                                                                                 
                                          String namePickerThing = inFromClient.readLine();
                                          namePickerThing = SharedKey.decrypt( namePickerThing, sessionKey_Kas, anIV.trim() );                                          
                                          int pos = namePickerThing.toLowerCase().indexOf("ACK_X1".toLowerCase());                        
@@ -276,13 +225,7 @@ public class TCPServer {
                                             System.out.println( "Invalid message on integrity check" );
                                          }
                                          }catch (Exception wer){}
-
-                                          /*
-                                          String flimflan = inFromClient.readLine();
-                                          flimflan = inFromClient.readLine();
-                                          flimflan = inFromClient.readLine();
-                                          flimflan = inFromClient.readLine();                                 
-                                          */
+                                          
                                          namePickerThing = namePartOfMessage;
 
                                          System.out.println( "Selected: " + namePickerThing);
@@ -315,14 +258,14 @@ public class TCPServer {
                                    
                                                   
                                     
-                                                  // Server to Alice: {K_AB , ticket |hash(K_AB, ticket))K_AS
+                                                  // Server to Alice: {K_AB , ticket |hash(K_AB, ticket))K_AS
                                                   ticket_encryption = theKAB + Ticket;
                                                   s_to_a = ( theKAB + Ticket + SecureChatUtils.hashPS(ticket_encryption));
-                                                  
+                                                  /*
                                                   System.out.println( "\n Server sends ticket and shared key to the client \n" + SharedKey.encrypt( s_to_a, sessionKey_Kas, anIV.trim()) + "\n");
                                                   
                                                   System.out.println("\n TICKET IS \n" + Ticket + "\n");
-
+                                                  */
                                                   wr.println("PROXY"+"\t"+theKAB+"\t"+newBobPort+"\t"+newAlicePort);
                                                                                                     
                                                   //userNameOfClient - chat session requester
@@ -337,8 +280,7 @@ public class TCPServer {
                                                   newBobPort += 2;
                                                   newAlicePort += 2;
 
-                                                  //System.out.println( "Hopefully this crazy thing worked..");
-                                                  
+                                                  //System.out.println( "Hopefully this crazy thing worked..");                                                  
 
                                                    temp  = null;
                                                    Printw2 temp2 = null; 
@@ -392,17 +334,7 @@ public class TCPServer {
                                 serverToClient.println("No matching username, try again");
                                 continue;
                             }                           
-                      }
-                      
-                      //System.out.println("Post procying got us here..");
-                      //private static HashMap < String, userInfo > userProfiles;
-                      
-
-                      //String sessionKey
-                      /*
-                      System.out.println("pausing server here 1");
-                      userNameOfClient = inFromClient.readLine();
-                      */
+                      }                                        
                       
                     }
               }  catch (IOException ex){ } 
@@ -411,10 +343,7 @@ public class TCPServer {
                /*   take the connection off prinList    */
 		           finally
                {
-                   //NumPeople = NumPeople - 1;
-                   // find person's named printwriter object and then remove from prinList
                    
-                 
 		          } // end of the finally
      } // end of run
  }// end of handle client

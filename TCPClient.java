@@ -36,12 +36,6 @@ class TCPClient {
     private static PublicKey publicKey;
     public static String serverPublicKey;
 
-    /* protocol login step switches */
-    private static Boolean protocolLoginStep1;
-    private static Boolean protocolLoginStep2;
-    private static Boolean protocolLoginStep3;
-    private static Boolean protocolLoginStep4;
-    
     /* shared key keys */
     public String key = "Bar12345Bar12345Bar12345Bar12345"; // 256 bit key --> key.length() == 32 bytes
     public String initVector = "RandomInitVector"; // 16 bytes IV
@@ -56,10 +50,6 @@ class TCPClient {
 
     public TCPClient() 
     {
-        protocolLoginStep1 = false;
-        protocolLoginStep2 = false;
-        protocolLoginStep3 = false;
-        protocolLoginStep4 = false;
         messageNumber = 0;
 
         onStep = 0;
@@ -79,10 +69,6 @@ class TCPClient {
        PrintWriter outToServer = new PrintWriter(clientSocket.getOutputStream(), true);
        ObjectOutputStream outputStream = new ObjectOutputStream(clientSocket.getOutputStream());    
        
-       /*
-       Client_IO clll = new Client_IO(clientSocket);
-       new Thread( clll ).start(); 
-       */
        Boolean haveServerPublicKey = false;
 
        BufferedReader fromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
@@ -108,14 +94,7 @@ class TCPClient {
 
         } catch ( Exception nosuchalgy){}
        
-       /*
-       System.out.println("Pausing client because reasons");
-       String newVar = fromServer.readLine();
-       newVar = fromServer.readLine();
-       newVar = fromServer.readLine();
-       newVar = fromServer.readLine();
-       newVar = fromServer.readLine();
-       */
+       
 
         int protocolTracker = 1;
         Boolean areTheyIn = false;
@@ -159,7 +138,7 @@ class TCPClient {
                                 forLogin = SharedKey.encrypt( forLogin, sessionKey_Kas, initVector).toString();
                             }
 
-                            /*Step 2 of protocol */   
+                            /* Step 2 of protocol */   
                             
 
                             /*
@@ -183,7 +162,7 @@ class TCPClient {
                             outputStream.writeObject(myEncryptedMessage);
                         }catch (Exception exc){}    
 
-                        /*Step 1 part 3 of 3 of protocol */ 
+                        /* Step 1 part 3 of 3 of protocol */ 
                         // send the {user, hash(PS), nonce}K_Shared to server
                         outToServer.println(forLogin);
                         String resultOfLoginRequest = fromServer.readLine();
@@ -195,10 +174,7 @@ class TCPClient {
                             break;
                         }                        
 
-                        System.out.println(resultOfLoginRequest);
-
-                        // --------------------------------------------------------------------   
-                        // -------------------------------------------------------------------- 
+                        System.out.println(resultOfLoginRequest);                        
                     }//end of while 
                 } // end of protocolTracker == 1 
 
@@ -244,23 +220,12 @@ class TCPClient {
 
                             if ( ( (serverResult = fromServer.readLine()) != null) && serverResult.startsWith("PROXY") )
                             {
-                                //insert proxy connect code here
-                                /*
-                                System.out.println("Finally got the right buddy thing, pausing client here");
-                                System.out.println( "Lucas uno: " + serverResult);
-                                String resultOfLoginRequest4 = fromServer.readLine();
-                                resultOfLoginRequest4 = fromServer.readLine();
-                                System.out.println(resultOfLoginRequest4);
-                                resultOfLoginRequest4 = fromServer.readLine();
-                                resultOfLoginRequest4 = fromServer.readLine();
-                                */
-                                    System.out.println("Server: yes, " + selectedName +" is available, waiting for him/her to select you");
-                                    
+                                    //insert proxy connect code here
                                 
-                                   
-                                    
+                                    System.out.println("Server: yes, " + selectedName +" is available, waiting for him/her to select you");                               
                                 
                                     String [] funPart = serverResult.split("\\s+");
+                                    
                                     //shared key is funPart[1]
                                     int clientPort = Integer.parseInt(funPart[2]);
                                     int serverPort = Integer.parseInt(funPart[3]);
@@ -279,7 +244,7 @@ class TCPClient {
                         {
                             System.out.println("Name not on your buddy list try again:");                                
                         } 
-                        //sentence = inFromUser.readLine();
+                        
                     }
                 }
                 if ( tcpClientMode)
@@ -304,9 +269,8 @@ class TCPClient {
         person.run();
     }
 
-
+/*
 // this class gets messages from the server
-
 public  class Client_IO implements Runnable {
 
     private Socket fromServerIO;
@@ -381,4 +345,5 @@ public  class Client_IO implements Runnable {
 }// end of clientio
 
 
+*/
 }
