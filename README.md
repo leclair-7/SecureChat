@@ -2,7 +2,7 @@
 by: Lucas Hagel, and Susmitha Manda
 
 #### Purpose:
-This repo implements an encryption protocol made my the authors for a graduate network security course. It is a Java based chat application that provides confidentiality, authenticity, and integrity.
+This repo implements an encryption protocol designed by the authors for a graduate network security course. It is a Java based chat application that provides confidentiality, authenticity, and integrity.
 
 It uses a multithreaded server (one thread to handle each client), a client/server handshake for authentication, and a connection passing mechanism from client-server to client-client during connection phases of the session. In the end two users can chat.
 
